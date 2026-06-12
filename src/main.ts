@@ -5,7 +5,8 @@ type EventSource = 'manual' | 'clock' | 'gate-open' | 'gate-close' | null;
 
 type SamplePoint = {
   input: number;
-  output: number;
+  rawOutput: number;
+  slewedOutput: number;
   event: EventSource;
   gateOpen: boolean;
 };
@@ -20,6 +21,7 @@ type PlotBox = {
 const HISTORY_LENGTH = 220;
 const POINT_COUNT = 160;
 const DEFAULT_CLOCK_RATE_HZ = 1;
+const DEFAULT_SLEW_AMOUNT = 0.35;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -36,9 +38,9 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v0.4</p>
+      <p class="eyebrow">Software Prototype v0.5</p>
       <h1>Sample Hold Lab</h1>
-      <p class="intro">A fixed visual patch for comparing Sample & Hold with Track & Hold before adding slew, jitter, audio, or free patching.</p>
+      <p class="intro">A fixed visual patch for comparing raw Sample/Track & Hold output with slewed output before adding jitter, audio, or free patching.</p>
     </header>
 
     <section class="patch-flow" aria-label="Fixed patch signal flow">
@@ -64,24 +66,25 @@ app.innerHTML = `
           <label><input type="radio" name="mode" value="track-hold" /> T&amp;H</label>
         </fieldset>
 
-        <output id="heldValue">0.00 V</output>
+        <output id="rawValue">Raw 0.00 V</output>
+        <output id="slewedValue">Slewed 0.00 V</output>
       </article>
 
       <div class="cable output-cable" aria-hidden="true">
-        <span>Output CV</span>
+        <span>Raw / Slewed CV</span>
       </div>
 
       <article class="module-card destination-module">
         <span class="module-label">Destination</span>
         <h2>Scope</h2>
-        <p>Shows input voltage and held/tracked output.</p>
+        <p>Shows input, raw output, and slewed output.</p>
         <output id="triggerState">Waiting</output>
       </article>
 
       <article class="module-card trigger-module">
         <span class="module-label">Event sources</span>
-        <h2>Trigger / Gate</h2>
-        <p>Clock triggers S&amp;H. The same clock opens and closes the T&amp;H gate.</p>
+        <h2>Trigger / Gate / Slew</h2>
+        <p>Clock and gate set the raw target. Slew smooths the output toward it.</p>
 
         <div class="event-control-group">
           <button id="triggerButton" type="button">Manual trigger</button>
@@ -91,6 +94,12 @@ app.innerHTML = `
           <span>Clock / gate rate</span>
           <input id="clockRate" type="range" min="0.25" max="4" step="0.25" value="1" />
           <output id="clockRateValue">1.00 Hz</output>
+        </label>
+
+        <label class="slew-control" for="slewAmount">
+          <span>Slew amount</span>
+          <input id="slewAmount" type="range" min="0" max="1" step="0.01" value="0.35" />
+          <output id="slewAmountValue">35%</output>
         </label>
 
         <output id="clockPulseState" class="clock-pulse-state">Clock waiting</output>
@@ -106,11 +115,12 @@ app.innerHTML = `
       <div class="scope-header">
         <div>
           <h2>Scope</h2>
-          <p id="scopeDescription">S&H mode: output changes on manual trigger or clock pulse.</p>
+          <p id="scopeDescription">S&H mode: raw output changes on trigger; slewed output moves toward it.</p>
         </div>
         <div class="legend" aria-label="Scope legend">
           <span><i class="legend-line input-line"></i>Input LFO</span>
-          <span><i class="legend-line held-line"></i>Output</span>
+          <span><i class="legend-line raw-line"></i>Raw output</span>
+          <span><i class="legend-line held-line"></i>Slewed output</span>
           <span><i class="legend-pulse clock-pulse-line"></i>Clock trigger</span>
           <span><i class="legend-pulse manual-pulse-line"></i>Manual trigger</span>
           <span><i class="legend-gate"></i>Gate open</span>
@@ -121,7 +131,7 @@ app.innerHTML = `
 
     <section class="rule-card">
       <h2>Core rule</h2>
-      <p><strong>S&amp;H</strong>: capture then hold. <strong>T&amp;H</strong>: follow while gate is open, hold when gate closes.</p>
+      <p><strong>Raw output</strong> jumps or follows. <strong>Slewed output</strong> glides toward the raw output.</p>
     </section>
   </section>
 `;
@@ -129,17 +139,20 @@ app.innerHTML = `
 const canvas = document.querySelector<HTMLCanvasElement>('#scope');
 const triggerButton = document.querySelector<HTMLButtonElement>('#triggerButton');
 const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
+const slewAmountInput = document.querySelector<HTMLInputElement>('#slewAmount');
 const inputValue = document.querySelector<HTMLOutputElement>('#inputValue');
-const heldValue = document.querySelector<HTMLOutputElement>('#heldValue');
+const rawValue = document.querySelector<HTMLOutputElement>('#rawValue');
+const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 const triggerState = document.querySelector<HTMLOutputElement>('#triggerState');
 const clockRateValue = document.querySelector<HTMLOutputElement>('#clockRateValue');
+const slewAmountValue = document.querySelector<HTMLOutputElement>('#slewAmountValue');
 const clockPulseState = document.querySelector<HTMLOutputElement>('#clockPulseState');
 const gateState = document.querySelector<HTMLOutputElement>('#gateState');
 const modeDescription = document.querySelector<HTMLParagraphElement>('#modeDescription');
 const scopeDescription = document.querySelector<HTMLParagraphElement>('#scopeDescription');
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]');
 
-if (!canvas || !triggerButton || !clockRateInput || !inputValue || !heldValue || !triggerState || !clockRateValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
+if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !inputValue || !rawValue || !slewedValue || !triggerState || !clockRateValue || !slewAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
   throw new Error('Required app elements were not found');
 }
 
@@ -150,11 +163,14 @@ if (!ctx) {
 }
 
 let mode: Mode = 'sample-hold';
-let outputVoltage = 0;
+let rawOutputVoltage = 0;
+let slewedOutputVoltage = 0;
+let lastFrameTime = 0;
 let lastEventTime = 0;
 let lastClockPulseTime = 0;
 let clockPulseVisibleUntil = 0;
 let clockRateHz = DEFAULT_CLOCK_RATE_HZ;
+let slewAmount = DEFAULT_SLEW_AMOUNT;
 let manualTriggerQueued = false;
 let previousGateOpen = false;
 let lastEventSource: EventSource = null;
@@ -167,6 +183,11 @@ triggerButton.addEventListener('click', () => {
 clockRateInput.addEventListener('input', () => {
   clockRateHz = Number(clockRateInput.value);
   clockRateValue.value = formatClockRate(clockRateHz);
+});
+
+slewAmountInput.addEventListener('input', () => {
+  slewAmount = Number(slewAmountInput.value);
+  slewAmountValue.value = formatSlewAmount(slewAmount);
 });
 
 modeInputs.forEach((input) => {
@@ -217,13 +238,13 @@ function isGateOpen(timeMs: number): boolean {
 
 function updateModeText(): void {
   if (mode === 'sample-hold') {
-    modeDescription.textContent = 'S&H captures on trigger, then holds.';
-    scopeDescription.textContent = 'S&H mode: output changes on manual trigger or clock pulse.';
+    modeDescription.textContent = 'S&H captures a raw target on trigger. Slew smooths the output toward it.';
+    scopeDescription.textContent = 'S&H mode: raw output changes on trigger; slewed output moves toward it.';
     return;
   }
 
-  modeDescription.textContent = 'T&H follows while gate is open, then holds.';
-  scopeDescription.textContent = 'T&H mode: output follows during gate-open areas and holds during gate-closed areas.';
+  modeDescription.textContent = 'T&H raw target follows while gate is open. Slew smooths the output toward it.';
+  scopeDescription.textContent = 'T&H mode: raw target follows during gate-open areas; slewed output glides behind it.';
 }
 
 function drawGrid(width: number, height: number): void {
@@ -287,15 +308,17 @@ function drawGateBands(points: SamplePoint[], width: number, height: number): vo
   });
 }
 
-function drawLine(points: number[], width: number, height: number, strokeStyle: string, lineWidth = 3): void {
+function drawLine(points: number[], width: number, height: number, strokeStyle: string, lineWidth = 3, dashed = false): void {
   if (points.length < 2) {
     return;
   }
 
+  ctx.save();
   ctx.strokeStyle = strokeStyle;
   ctx.lineWidth = lineWidth;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  ctx.setLineDash(dashed ? [9, 7] : []);
   ctx.beginPath();
 
   points.forEach((value, index) => {
@@ -310,22 +333,23 @@ function drawLine(points: number[], width: number, height: number, strokeStyle: 
   });
 
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawHeldStepping(points: SamplePoint[], width: number, height: number): void {
+function drawOutputTrace(points: SamplePoint[], width: number, height: number): void {
   if (points.length < 2) {
     return;
   }
 
-  ctx.strokeStyle = 'rgba(244, 114, 182, 0.22)';
-  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.20)';
+  ctx.lineWidth = 11;
   ctx.lineJoin = 'round';
-  ctx.lineCap = 'butt';
+  ctx.lineCap = 'round';
   ctx.beginPath();
 
   points.forEach((point, index) => {
     const x = indexToX(index, width);
-    const y = voltageToY(point.output, height);
+    const y = voltageToY(point.slewedOutput, height);
 
     if (index === 0) {
       ctx.moveTo(x, y);
@@ -395,10 +419,12 @@ function drawCurrentMarkers(points: SamplePoint[], width: number, height: number
 
   const x = width - PLOT.right;
   const inputY = voltageToY(latest.input, height);
-  const outputY = voltageToY(latest.output, height);
+  const rawY = voltageToY(latest.rawOutput, height);
+  const slewedY = voltageToY(latest.slewedOutput, height);
 
   drawMarker(x, inputY, '#67e8f9');
-  drawMarker(x, outputY, '#f472b6');
+  drawMarker(x, rawY, '#a78bfa');
+  drawMarker(x, slewedY, '#f472b6');
 
   ctx.font = '800 12px Inter, sans-serif';
   ctx.textAlign = 'right';
@@ -406,9 +432,13 @@ function drawCurrentMarkers(points: SamplePoint[], width: number, height: number
   ctx.fillStyle = '#67e8f9';
   ctx.fillText('input now', x - 8, inputY - 8);
 
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillText('raw target', x - 8, rawY);
+
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#f472b6';
-  ctx.fillText(mode === 'track-hold' ? 'T&H output' : 'S&H output', x - 8, outputY + 8);
+  ctx.fillText('slewed output', x - 8, slewedY + 8);
 }
 
 function drawMarker(x: number, y: number, fillStyle: string): void {
@@ -428,6 +458,19 @@ function formatVoltage(value: number): string {
 
 function formatClockRate(value: number): string {
   return `${value.toFixed(2)} Hz`;
+}
+
+function formatSlewAmount(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function slewCoefficient(deltaMs: number): number {
+  if (slewAmount <= 0) {
+    return 1;
+  }
+
+  const timeConstantMs = 25 + slewAmount * 1450;
+  return 1 - Math.exp(-deltaMs / timeConstantMs);
 }
 
 function chooseSampleHoldEvent(timeMs: number): EventSource {
@@ -461,12 +504,12 @@ function calculateTrackHoldEvent(gateOpen: boolean): EventSource {
   return null;
 }
 
-function updateOutput(currentInput: number, timeMs: number, gateOpen: boolean): EventSource {
+function updateRawOutput(currentInput: number, timeMs: number, gateOpen: boolean): EventSource {
   if (mode === 'sample-hold') {
     const eventSource = chooseSampleHoldEvent(timeMs);
 
     if (eventSource) {
-      outputVoltage = currentInput;
+      rawOutputVoltage = currentInput;
       lastEventTime = timeMs;
       lastEventSource = eventSource;
     }
@@ -477,7 +520,7 @@ function updateOutput(currentInput: number, timeMs: number, gateOpen: boolean): 
   const eventSource = calculateTrackHoldEvent(gateOpen);
 
   if (gateOpen) {
-    outputVoltage = currentInput;
+    rawOutputVoltage = currentInput;
   }
 
   if (eventSource) {
@@ -488,14 +531,24 @@ function updateOutput(currentInput: number, timeMs: number, gateOpen: boolean): 
   return eventSource;
 }
 
+function updateSlewedOutput(deltaMs: number): void {
+  const coefficient = slewCoefficient(deltaMs);
+  slewedOutputVoltage += (rawOutputVoltage - slewedOutputVoltage) * coefficient;
+}
+
 function animate(timeMs: number): void {
   const currentInput = calculateInputVoltage(timeMs);
   const gateOpen = isGateOpen(timeMs);
-  const eventSource = updateOutput(currentInput, timeMs, gateOpen);
+  const deltaMs = lastFrameTime === 0 ? 16.7 : Math.min(50, timeMs - lastFrameTime);
+  lastFrameTime = timeMs;
+
+  const eventSource = updateRawOutput(currentInput, timeMs, gateOpen);
+  updateSlewedOutput(deltaMs);
 
   history.push({
     input: currentInput,
-    output: outputVoltage,
+    rawOutput: rawOutputVoltage,
+    slewedOutput: slewedOutputVoltage,
     event: eventSource,
     gateOpen: mode === 'track-hold' && gateOpen,
   });
@@ -510,15 +563,18 @@ function animate(timeMs: number): void {
 
   drawGrid(width, height);
   drawGateBands(visiblePoints, width, height);
-  drawHeldStepping(visiblePoints, width, height);
+  drawOutputTrace(visiblePoints, width, height);
   drawEvents(visiblePoints, width, height);
   drawLine(visiblePoints.map((point) => point.input), width, height, '#67e8f9', 3);
-  drawLine(visiblePoints.map((point) => point.output), width, height, '#f472b6', 4);
+  drawLine(visiblePoints.map((point) => point.rawOutput), width, height, '#a78bfa', 3, true);
+  drawLine(visiblePoints.map((point) => point.slewedOutput), width, height, '#f472b6', 4);
   drawCurrentMarkers(visiblePoints, width, height);
 
   inputValue.value = formatVoltage(currentInput);
-  heldValue.value = formatVoltage(outputVoltage);
+  rawValue.value = `Raw ${formatVoltage(rawOutputVoltage)}`;
+  slewedValue.value = `Slewed ${formatVoltage(slewedOutputVoltage)}`;
   clockRateValue.value = formatClockRate(clockRateHz);
+  slewAmountValue.value = formatSlewAmount(slewAmount);
 
   const eventAge = timeMs - lastEventTime;
   const recentlyChanged = eventAge < 450;
@@ -528,7 +584,7 @@ function animate(timeMs: number): void {
     clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Clock pulse' : 'Clock waiting';
     gateState.value = 'Gate inactive in S&H';
   } else {
-    triggerState.value = gateOpen ? 'Tracking input' : 'Holding value';
+    triggerState.value = gateOpen ? 'Tracking target' : 'Holding target';
     clockPulseState.value = 'Clock drives gate';
     gateState.value = gateOpen ? 'Gate open' : 'Gate closed';
   }
@@ -542,4 +598,5 @@ function animate(timeMs: number): void {
 
 updateModeText();
 clockRateValue.value = formatClockRate(clockRateHz);
+slewAmountValue.value = formatSlewAmount(slewAmount);
 requestAnimationFrame(animate);
