@@ -1,12 +1,16 @@
 import './styles.css';
 
-type Mode = 'sample-hold' | 'track-hold';
+type Mode = 'sample-hold' | 'track-hold' | 'super-sample-hold';
 type EventSource = 'manual' | 'clock' | 'gate-open' | 'gate-close' | null;
 
 type SamplePoint = {
   input: number;
-  rawOutput: number;
-  slewedOutput: number;
+  rawMain: number;
+  slewedMain: number;
+  rawHigh: number;
+  slewedHigh: number;
+  rawLow: number;
+  slewedLow: number;
   event: EventSource;
   regularClock: boolean;
   gateOpen: boolean;
@@ -24,6 +28,7 @@ const POINT_COUNT = 160;
 const DEFAULT_CLOCK_RATE_HZ = 1;
 const DEFAULT_SLEW_AMOUNT = 0.35;
 const DEFAULT_JITTER_AMOUNT = 0.1;
+const SUPER_SPREAD_VOLTS = 0.9;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -40,9 +45,9 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v0.6</p>
+      <p class="eyebrow">Software Prototype v0.7</p>
       <h1>Sample Hold Lab</h1>
-      <p class="intro">A fixed visual patch for comparing regular clock timing with subtle jittered trigger and gate timing.</p>
+      <p class="intro">A fixed visual patch showing what Super S&amp;H adds compared with normal Sample &amp; Hold: several related held control paths from one trigger.</p>
     </header>
 
     <section class="patch-flow" aria-label="Fixed patch signal flow">
@@ -59,34 +64,36 @@ app.innerHTML = `
 
       <article class="module-card processor-module">
         <span class="module-label">Processor</span>
-        <h2>Sample / Track & Hold</h2>
-        <p id="modeDescription">S&H captures a raw target on jittered trigger timing. Slew smooths the output toward it.</p>
+        <h2>Sample / Track / Super Hold</h2>
+        <p id="modeDescription">S&amp;H captures one raw target. Slew smooths the output toward it.</p>
 
         <fieldset class="mode-switch" aria-label="Hold mode">
           <legend>Mode</legend>
           <label><input type="radio" name="mode" value="sample-hold" checked /> S&amp;H</label>
           <label><input type="radio" name="mode" value="track-hold" /> T&amp;H</label>
+          <label><input type="radio" name="mode" value="super-sample-hold" /> Super S&amp;H</label>
         </fieldset>
 
         <output id="rawValue">Raw 0.00 V</output>
         <output id="slewedValue">Slewed 0.00 V</output>
+        <output id="superValue">Super off</output>
       </article>
 
       <div class="cable output-cable" aria-hidden="true">
-        <span>Raw / Slewed CV</span>
+        <span>Related CV</span>
       </div>
 
       <article class="module-card destination-module">
         <span class="module-label">Destination</span>
         <h2>Scope</h2>
-        <p>Shows regular clock, jittered timing, raw output, and slewed output.</p>
+        <p>Shows normal output and Super S&amp;H companion outputs.</p>
         <output id="triggerState">Waiting</output>
       </article>
 
       <article class="module-card trigger-module">
         <span class="module-label">Event sources</span>
         <h2>Trigger / Gate / Slew / Jitter</h2>
-        <p>Regular clock is the reference. Jitter moves the actual trigger or gate edge slightly.</p>
+        <p>Clock timing can jitter. Super S&amp;H uses one trigger to create related visual outputs.</p>
 
         <div class="event-control-group">
           <button id="triggerButton" type="button">Manual trigger</button>
@@ -111,7 +118,7 @@ app.innerHTML = `
         </label>
 
         <output id="clockPulseState" class="clock-pulse-state">Jittered clock waiting</output>
-        <output id="gateState" class="gate-state">Gate inactive in S&amp;H</output>
+        <output id="gateState" class="gate-state">Gate inactive</output>
       </article>
 
       <div class="cable trigger-cable" aria-hidden="true">
@@ -123,12 +130,14 @@ app.innerHTML = `
       <div class="scope-header">
         <div>
           <h2>Scope</h2>
-          <p id="scopeDescription">S&H mode: regular clock is the reference; jittered clock triggers capture near that reference.</p>
+          <p id="scopeDescription">S&amp;H mode: one held/slewed output from each trigger.</p>
         </div>
         <div class="legend" aria-label="Scope legend">
           <span><i class="legend-line input-line"></i>Input LFO</span>
-          <span><i class="legend-line raw-line"></i>Raw output</span>
-          <span><i class="legend-line held-line"></i>Slewed output</span>
+          <span><i class="legend-line raw-line"></i>Raw main</span>
+          <span><i class="legend-line held-line"></i>Slewed main</span>
+          <span><i class="legend-line super-high-line"></i>Super high</span>
+          <span><i class="legend-line super-low-line"></i>Super low</span>
           <span><i class="legend-pulse regular-clock-line"></i>Regular clock</span>
           <span><i class="legend-pulse clock-pulse-line"></i>Jittered timing</span>
           <span><i class="legend-pulse manual-pulse-line"></i>Manual trigger</span>
@@ -140,7 +149,7 @@ app.innerHTML = `
 
     <section class="rule-card">
       <h2>Core rule</h2>
-      <p><strong>Regular clock</strong> is the reference. <strong>Jitter</strong> moves the real trigger or gate edge slightly early or late.</p>
+      <p><strong>Normal S&amp;H</strong> creates one held/slewed path. <strong>Super S&amp;H</strong> shows several related held/slewed paths from the same trigger.</p>
     </section>
   </section>
 `;
@@ -153,6 +162,7 @@ const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmoun
 const inputValue = document.querySelector<HTMLOutputElement>('#inputValue');
 const rawValue = document.querySelector<HTMLOutputElement>('#rawValue');
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
+const superValue = document.querySelector<HTMLOutputElement>('#superValue');
 const triggerState = document.querySelector<HTMLOutputElement>('#triggerState');
 const clockRateValue = document.querySelector<HTMLOutputElement>('#clockRateValue');
 const slewAmountValue = document.querySelector<HTMLOutputElement>('#slewAmountValue');
@@ -163,7 +173,7 @@ const modeDescription = document.querySelector<HTMLParagraphElement>('#modeDescr
 const scopeDescription = document.querySelector<HTMLParagraphElement>('#scopeDescription');
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]');
 
-if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputValue || !rawValue || !slewedValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
+if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputValue || !rawValue || !slewedValue || !superValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
   throw new Error('Required app elements were not found');
 }
 
@@ -174,8 +184,12 @@ if (!ctx) {
 }
 
 let mode: Mode = 'sample-hold';
-let rawOutputVoltage = 0;
-let slewedOutputVoltage = 0;
+let rawMainVoltage = 0;
+let rawHighVoltage = 0;
+let rawLowVoltage = 0;
+let slewedMainVoltage = 0;
+let slewedHighVoltage = 0;
+let slewedLowVoltage = 0;
 let lastFrameTime = 0;
 let lastEventTime = 0;
 let nextIdealMarkTime = 0;
@@ -304,13 +318,19 @@ function takeJitteredClockEvent(timeMs: number): boolean {
 
 function updateModeText(): void {
   if (mode === 'sample-hold') {
-    modeDescription.textContent = 'S&H captures a raw target on jittered trigger timing. Slew smooths the output toward it.';
-    scopeDescription.textContent = 'S&H mode: regular clock is the reference; jittered clock triggers capture near that reference.';
+    modeDescription.textContent = 'S&H captures one raw target. Slew smooths the output toward it.';
+    scopeDescription.textContent = 'S&H mode: one held/slewed output from each trigger.';
     return;
   }
 
-  modeDescription.textContent = 'T&H gate edges use jittered timing. Slew smooths the output toward the raw target.';
-  scopeDescription.textContent = 'T&H mode: regular clock is the reference; jittered gate edges open and close the tracking window.';
+  if (mode === 'track-hold') {
+    modeDescription.textContent = 'T&H follows while gate is open, then holds when gate closes.';
+    scopeDescription.textContent = 'T&H mode: output follows during gate-open areas and holds during gate-closed areas.';
+    return;
+  }
+
+  modeDescription.textContent = 'Super S&H captures one main target and two related companion targets from the same trigger.';
+  scopeDescription.textContent = 'Super S&H mode: one trigger creates three related held/slewed visual outputs.';
 }
 
 function drawGrid(width: number, height: number): void {
@@ -436,7 +456,7 @@ function drawOutputTrace(points: SamplePoint[], width: number, height: number): 
 
   points.forEach((point, index) => {
     const x = indexToX(index, width);
-    const y = voltageToY(point.slewedOutput, height);
+    const y = voltageToY(point.slewedMain, height);
 
     if (index === 0) {
       ctx.moveTo(x, y);
@@ -506,8 +526,8 @@ function drawCurrentMarkers(points: SamplePoint[], width: number, height: number
 
   const x = width - PLOT.right;
   const inputY = voltageToY(latest.input, height);
-  const rawY = voltageToY(latest.rawOutput, height);
-  const slewedY = voltageToY(latest.slewedOutput, height);
+  const rawY = voltageToY(latest.rawMain, height);
+  const slewedY = voltageToY(latest.slewedMain, height);
 
   drawMarker(x, inputY, '#67e8f9');
   drawMarker(x, rawY, '#a78bfa');
@@ -521,11 +541,22 @@ function drawCurrentMarkers(points: SamplePoint[], width: number, height: number
 
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#a78bfa';
-  ctx.fillText('raw target', x - 8, rawY);
+  ctx.fillText('raw main', x - 8, rawY);
 
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#f472b6';
-  ctx.fillText('slewed output', x - 8, slewedY + 8);
+  ctx.fillText('slewed main', x - 8, slewedY + 8);
+
+  if (mode === 'super-sample-hold') {
+    const highY = voltageToY(latest.slewedHigh, height);
+    const lowY = voltageToY(latest.slewedLow, height);
+    drawMarker(x, highY, '#22c55e');
+    drawMarker(x, lowY, '#60a5fa');
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('super high', x - 8, highY - 8);
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillText('super low', x - 8, lowY + 8);
+  }
 }
 
 function drawMarker(x: number, y: number, fillStyle: string): void {
@@ -590,12 +621,27 @@ function calculateTrackHoldEvent(timeMs: number): EventSource {
   return null;
 }
 
+function captureMainTarget(currentInput: number): void {
+  rawMainVoltage = currentInput;
+
+  if (mode === 'super-sample-hold') {
+    rawHighVoltage = clamp(currentInput + SUPER_SPREAD_VOLTS, -5, 5);
+    rawLowVoltage = clamp(currentInput - SUPER_SPREAD_VOLTS, -5, 5);
+  } else {
+    rawHighVoltage = rawMainVoltage;
+    rawLowVoltage = rawMainVoltage;
+  }
+}
+
 function updateRawOutput(currentInput: number, timeMs: number): EventSource {
-  if (mode === 'sample-hold') {
-    const eventSource = chooseSampleHoldEvent(timeMs);
+  if (mode === 'track-hold') {
+    const eventSource = calculateTrackHoldEvent(timeMs);
+
+    if (gateOpenState) {
+      captureMainTarget(currentInput);
+    }
 
     if (eventSource) {
-      rawOutputVoltage = currentInput;
       lastEventTime = timeMs;
       lastEventSource = eventSource;
     }
@@ -603,13 +649,10 @@ function updateRawOutput(currentInput: number, timeMs: number): EventSource {
     return eventSource;
   }
 
-  const eventSource = calculateTrackHoldEvent(timeMs);
-
-  if (gateOpenState) {
-    rawOutputVoltage = currentInput;
-  }
+  const eventSource = chooseSampleHoldEvent(timeMs);
 
   if (eventSource) {
+    captureMainTarget(currentInput);
     lastEventTime = timeMs;
     lastEventSource = eventSource;
   }
@@ -619,7 +662,9 @@ function updateRawOutput(currentInput: number, timeMs: number): EventSource {
 
 function updateSlewedOutput(deltaMs: number): void {
   const coefficient = slewCoefficient(deltaMs);
-  slewedOutputVoltage += (rawOutputVoltage - slewedOutputVoltage) * coefficient;
+  slewedMainVoltage += (rawMainVoltage - slewedMainVoltage) * coefficient;
+  slewedHighVoltage += (rawHighVoltage - slewedHighVoltage) * coefficient;
+  slewedLowVoltage += (rawLowVoltage - slewedLowVoltage) * coefficient;
 }
 
 function animate(timeMs: number): void {
@@ -635,8 +680,12 @@ function animate(timeMs: number): void {
 
   history.push({
     input: currentInput,
-    rawOutput: rawOutputVoltage,
-    slewedOutput: slewedOutputVoltage,
+    rawMain: rawMainVoltage,
+    slewedMain: slewedMainVoltage,
+    rawHigh: rawHighVoltage,
+    slewedHigh: slewedHighVoltage,
+    rawLow: rawLowVoltage,
+    slewedLow: slewedLowVoltage,
     event: eventSource,
     regularClock,
     gateOpen: mode === 'track-hold' && gateOpenState,
@@ -656,13 +705,22 @@ function animate(timeMs: number): void {
   drawOutputTrace(visiblePoints, width, height);
   drawEvents(visiblePoints, width, height);
   drawLine(visiblePoints.map((point) => point.input), width, height, '#67e8f9', 3);
-  drawLine(visiblePoints.map((point) => point.rawOutput), width, height, '#a78bfa', 3, true);
-  drawLine(visiblePoints.map((point) => point.slewedOutput), width, height, '#f472b6', 4);
+  drawLine(visiblePoints.map((point) => point.rawMain), width, height, '#a78bfa', 3, true);
+  drawLine(visiblePoints.map((point) => point.slewedMain), width, height, '#f472b6', 4);
+
+  if (mode === 'super-sample-hold') {
+    drawLine(visiblePoints.map((point) => point.slewedHigh), width, height, '#22c55e', 3);
+    drawLine(visiblePoints.map((point) => point.slewedLow), width, height, '#60a5fa', 3);
+  }
+
   drawCurrentMarkers(visiblePoints, width, height);
 
   inputValue.value = formatVoltage(currentInput);
-  rawValue.value = `Raw ${formatVoltage(rawOutputVoltage)}`;
-  slewedValue.value = `Slewed ${formatVoltage(slewedOutputVoltage)}`;
+  rawValue.value = `Raw ${formatVoltage(rawMainVoltage)}`;
+  slewedValue.value = `Slewed ${formatVoltage(slewedMainVoltage)}`;
+  superValue.value = mode === 'super-sample-hold'
+    ? `Super +${formatVoltage(rawHighVoltage)} / ${formatVoltage(rawLowVoltage)}`
+    : 'Super off';
   clockRateValue.value = formatClockRate(clockRateHz);
   slewAmountValue.value = formatSlewAmount(slewAmount);
   jitterAmountValue.value = formatJitterAmount(jitterAmount);
@@ -670,14 +728,15 @@ function animate(timeMs: number): void {
   const eventAge = timeMs - lastEventTime;
   const recentlyChanged = eventAge < 450;
 
-  if (mode === 'sample-hold') {
-    triggerState.value = recentlyChanged ? `${lastEventSource === 'manual' ? 'Manual' : 'Jittered clock'} trigger` : 'Waiting';
-    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered clock pulse' : 'Jittered clock waiting';
-    gateState.value = 'Gate inactive in S&H';
-  } else {
+  if (mode === 'track-hold') {
     triggerState.value = gateOpenState ? 'Tracking target' : 'Holding target';
     clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered gate edge' : 'Jitter drives gate';
     gateState.value = gateOpenState ? 'Gate open' : 'Gate closed';
+  } else {
+    const modeLabel = mode === 'super-sample-hold' ? 'Super' : 'S&H';
+    triggerState.value = recentlyChanged ? `${modeLabel} ${lastEventSource === 'manual' ? 'manual' : 'jittered'} trigger` : 'Waiting';
+    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered clock pulse' : 'Jittered clock waiting';
+    gateState.value = 'Gate inactive';
   }
 
   triggerState.classList.toggle('is-triggered', mode === 'track-hold' ? gateOpenState : recentlyChanged);
