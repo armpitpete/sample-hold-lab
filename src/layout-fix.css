@@ -19,8 +19,9 @@
   min-height: 170px !important;
 }
 
+.processor-module,
 .trigger-module {
-  min-height: 270px !important;
+  min-height: 300px !important;
 }
 
 .trigger-cable {
@@ -52,6 +53,36 @@
   margin-top: 10px;
 }
 
+.mode-switch {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.mode-switch legend {
+  padding: 0 6px;
+  color: #bfdbfe;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mode-switch label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #e5e7eb;
+  font-weight: 800;
+}
+
+.mode-switch input {
+  accent-color: #facc15;
+}
+
 .clock-control {
   display: grid;
   grid-template-columns: 1fr;
@@ -67,12 +98,14 @@
 }
 
 .clock-control output,
-.clock-pulse-state {
+.clock-pulse-state,
+.gate-state {
   width: fit-content;
   min-width: 96px;
 }
 
-.clock-pulse-state {
+.clock-pulse-state,
+.gate-state {
   margin-top: 12px;
 }
 
@@ -82,6 +115,15 @@
 
 .manual-pulse-line {
   background: #fb923c !important;
+}
+
+.legend-gate {
+  display: inline-block;
+  width: 28px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.35);
+  border: 1px solid rgba(34, 197, 94, 0.8);
 }
 
 @media (max-width: 880px) {
