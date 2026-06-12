@@ -8,6 +8,7 @@ type SamplePoint = {
   rawOutput: number;
   slewedOutput: number;
   event: EventSource;
+  regularClock: boolean;
   gateOpen: boolean;
 };
 
@@ -22,6 +23,7 @@ const HISTORY_LENGTH = 220;
 const POINT_COUNT = 160;
 const DEFAULT_CLOCK_RATE_HZ = 1;
 const DEFAULT_SLEW_AMOUNT = 0.35;
+const DEFAULT_JITTER_AMOUNT = 0.1;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -38,9 +40,9 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v0.5</p>
+      <p class="eyebrow">Software Prototype v0.6</p>
       <h1>Sample Hold Lab</h1>
-      <p class="intro">A fixed visual patch for comparing raw Sample/Track & Hold output with slewed output before adding jitter, audio, or free patching.</p>
+      <p class="intro">A fixed visual patch for comparing regular clock timing with subtle jittered trigger and gate timing.</p>
     </header>
 
     <section class="patch-flow" aria-label="Fixed patch signal flow">
@@ -58,7 +60,7 @@ app.innerHTML = `
       <article class="module-card processor-module">
         <span class="module-label">Processor</span>
         <h2>Sample / Track & Hold</h2>
-        <p id="modeDescription">S&H captures on trigger, then holds.</p>
+        <p id="modeDescription">S&H captures a raw target on jittered trigger timing. Slew smooths the output toward it.</p>
 
         <fieldset class="mode-switch" aria-label="Hold mode">
           <legend>Mode</legend>
@@ -77,14 +79,14 @@ app.innerHTML = `
       <article class="module-card destination-module">
         <span class="module-label">Destination</span>
         <h2>Scope</h2>
-        <p>Shows input, raw output, and slewed output.</p>
+        <p>Shows regular clock, jittered timing, raw output, and slewed output.</p>
         <output id="triggerState">Waiting</output>
       </article>
 
       <article class="module-card trigger-module">
         <span class="module-label">Event sources</span>
-        <h2>Trigger / Gate / Slew</h2>
-        <p>Clock and gate set the raw target. Slew smooths the output toward it.</p>
+        <h2>Trigger / Gate / Slew / Jitter</h2>
+        <p>Regular clock is the reference. Jitter moves the actual trigger or gate edge slightly.</p>
 
         <div class="event-control-group">
           <button id="triggerButton" type="button">Manual trigger</button>
@@ -102,8 +104,14 @@ app.innerHTML = `
           <output id="slewAmountValue">35%</output>
         </label>
 
-        <output id="clockPulseState" class="clock-pulse-state">Clock waiting</output>
-        <output id="gateState" class="gate-state">Gate closed</output>
+        <label class="jitter-control" for="jitterAmount">
+          <span>Timing jitter</span>
+          <input id="jitterAmount" type="range" min="0" max="0.35" step="0.01" value="0.10" />
+          <output id="jitterAmountValue">10%</output>
+        </label>
+
+        <output id="clockPulseState" class="clock-pulse-state">Jittered clock waiting</output>
+        <output id="gateState" class="gate-state">Gate inactive in S&amp;H</output>
       </article>
 
       <div class="cable trigger-cable" aria-hidden="true">
@@ -115,13 +123,14 @@ app.innerHTML = `
       <div class="scope-header">
         <div>
           <h2>Scope</h2>
-          <p id="scopeDescription">S&H mode: raw output changes on trigger; slewed output moves toward it.</p>
+          <p id="scopeDescription">S&H mode: regular clock is the reference; jittered clock triggers capture near that reference.</p>
         </div>
         <div class="legend" aria-label="Scope legend">
           <span><i class="legend-line input-line"></i>Input LFO</span>
           <span><i class="legend-line raw-line"></i>Raw output</span>
           <span><i class="legend-line held-line"></i>Slewed output</span>
-          <span><i class="legend-pulse clock-pulse-line"></i>Clock trigger</span>
+          <span><i class="legend-pulse regular-clock-line"></i>Regular clock</span>
+          <span><i class="legend-pulse clock-pulse-line"></i>Jittered timing</span>
           <span><i class="legend-pulse manual-pulse-line"></i>Manual trigger</span>
           <span><i class="legend-gate"></i>Gate open</span>
         </div>
@@ -131,7 +140,7 @@ app.innerHTML = `
 
     <section class="rule-card">
       <h2>Core rule</h2>
-      <p><strong>Raw output</strong> jumps or follows. <strong>Slewed output</strong> glides toward the raw output.</p>
+      <p><strong>Regular clock</strong> is the reference. <strong>Jitter</strong> moves the real trigger or gate edge slightly early or late.</p>
     </section>
   </section>
 `;
@@ -140,19 +149,21 @@ const canvas = document.querySelector<HTMLCanvasElement>('#scope');
 const triggerButton = document.querySelector<HTMLButtonElement>('#triggerButton');
 const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
 const slewAmountInput = document.querySelector<HTMLInputElement>('#slewAmount');
+const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmount');
 const inputValue = document.querySelector<HTMLOutputElement>('#inputValue');
 const rawValue = document.querySelector<HTMLOutputElement>('#rawValue');
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 const triggerState = document.querySelector<HTMLOutputElement>('#triggerState');
 const clockRateValue = document.querySelector<HTMLOutputElement>('#clockRateValue');
 const slewAmountValue = document.querySelector<HTMLOutputElement>('#slewAmountValue');
+const jitterAmountValue = document.querySelector<HTMLOutputElement>('#jitterAmountValue');
 const clockPulseState = document.querySelector<HTMLOutputElement>('#clockPulseState');
 const gateState = document.querySelector<HTMLOutputElement>('#gateState');
 const modeDescription = document.querySelector<HTMLParagraphElement>('#modeDescription');
 const scopeDescription = document.querySelector<HTMLParagraphElement>('#scopeDescription');
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]');
 
-if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !inputValue || !rawValue || !slewedValue || !triggerState || !clockRateValue || !slewAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
+if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputValue || !rawValue || !slewedValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
   throw new Error('Required app elements were not found');
 }
 
@@ -167,13 +178,17 @@ let rawOutputVoltage = 0;
 let slewedOutputVoltage = 0;
 let lastFrameTime = 0;
 let lastEventTime = 0;
-let lastClockPulseTime = 0;
+let nextIdealMarkTime = 0;
+let nextIdealEventTime = 0;
+let nextJitteredEventTime = 0;
 let clockPulseVisibleUntil = 0;
 let clockRateHz = DEFAULT_CLOCK_RATE_HZ;
 let slewAmount = DEFAULT_SLEW_AMOUNT;
+let jitterAmount = DEFAULT_JITTER_AMOUNT;
 let manualTriggerQueued = false;
-let previousGateOpen = false;
+let gateOpenState = false;
 let lastEventSource: EventSource = null;
+let clockScheduleNeedsReset = true;
 const history: SamplePoint[] = [];
 
 triggerButton.addEventListener('click', () => {
@@ -183,11 +198,18 @@ triggerButton.addEventListener('click', () => {
 clockRateInput.addEventListener('input', () => {
   clockRateHz = Number(clockRateInput.value);
   clockRateValue.value = formatClockRate(clockRateHz);
+  clockScheduleNeedsReset = true;
 });
 
 slewAmountInput.addEventListener('input', () => {
   slewAmount = Number(slewAmountInput.value);
   slewAmountValue.value = formatSlewAmount(slewAmount);
+});
+
+jitterAmountInput.addEventListener('input', () => {
+  jitterAmount = Number(jitterAmountInput.value);
+  jitterAmountValue.value = formatJitterAmount(jitterAmount);
+  clockScheduleNeedsReset = true;
 });
 
 modeInputs.forEach((input) => {
@@ -196,6 +218,8 @@ modeInputs.forEach((input) => {
     history.length = 0;
     lastEventSource = null;
     lastEventTime = 0;
+    gateOpenState = false;
+    clockScheduleNeedsReset = true;
     updateModeText();
   });
 });
@@ -231,20 +255,62 @@ function clockIntervalMs(): number {
   return 1000 / clockRateHz;
 }
 
-function isGateOpen(timeMs: number): boolean {
-  const phase = timeMs % (clockIntervalMs() * 2);
-  return phase < clockIntervalMs();
+function randomJitterOffset(intervalMs: number): number {
+  if (jitterAmount <= 0) {
+    return 0;
+  }
+
+  return (Math.random() * 2 - 1) * intervalMs * jitterAmount;
+}
+
+function resetClockSchedule(timeMs: number): void {
+  const interval = clockIntervalMs();
+  nextIdealMarkTime = timeMs + interval;
+  nextIdealEventTime = nextIdealMarkTime;
+  nextJitteredEventTime = nextIdealEventTime + randomJitterOffset(interval);
+  clockScheduleNeedsReset = false;
+  clockPulseVisibleUntil = 0;
+}
+
+function ensureClockSchedule(timeMs: number): void {
+  if (clockScheduleNeedsReset || nextIdealMarkTime === 0 || nextJitteredEventTime === 0) {
+    resetClockSchedule(timeMs);
+  }
+}
+
+function takeRegularClockMark(timeMs: number): boolean {
+  let marked = false;
+  const interval = clockIntervalMs();
+
+  while (timeMs >= nextIdealMarkTime) {
+    marked = true;
+    nextIdealMarkTime += interval;
+  }
+
+  return marked;
+}
+
+function takeJitteredClockEvent(timeMs: number): boolean {
+  if (timeMs < nextJitteredEventTime) {
+    return false;
+  }
+
+  const interval = clockIntervalMs();
+  nextIdealEventTime += interval;
+  nextJitteredEventTime = nextIdealEventTime + randomJitterOffset(interval);
+  clockPulseVisibleUntil = timeMs + 260;
+  return true;
 }
 
 function updateModeText(): void {
   if (mode === 'sample-hold') {
-    modeDescription.textContent = 'S&H captures a raw target on trigger. Slew smooths the output toward it.';
-    scopeDescription.textContent = 'S&H mode: raw output changes on trigger; slewed output moves toward it.';
+    modeDescription.textContent = 'S&H captures a raw target on jittered trigger timing. Slew smooths the output toward it.';
+    scopeDescription.textContent = 'S&H mode: regular clock is the reference; jittered clock triggers capture near that reference.';
     return;
   }
 
-  modeDescription.textContent = 'T&H raw target follows while gate is open. Slew smooths the output toward it.';
-  scopeDescription.textContent = 'T&H mode: raw target follows during gate-open areas; slewed output glides behind it.';
+  modeDescription.textContent = 'T&H gate edges use jittered timing. Slew smooths the output toward the raw target.';
+  scopeDescription.textContent = 'T&H mode: regular clock is the reference; jittered gate edges open and close the tracking window.';
 }
 
 function drawGrid(width: number, height: number): void {
@@ -288,6 +354,27 @@ function drawGrid(width: number, height: number): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('time →', PLOT.left + plotWidth(width) / 2, height - 10);
+}
+
+function drawRegularClockMarks(points: SamplePoint[], width: number, height: number): void {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.42)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 7]);
+
+  points.forEach((point, index) => {
+    if (!point.regularClock) {
+      return;
+    }
+
+    const x = indexToX(index, width);
+    ctx.beginPath();
+    ctx.moveTo(x, PLOT.top);
+    ctx.lineTo(x, height - PLOT.bottom);
+    ctx.stroke();
+  });
+
+  ctx.restore();
 }
 
 function drawGateBands(points: SamplePoint[], width: number, height: number): void {
@@ -400,11 +487,11 @@ function getEventStyle(event: EventSource): { strong: string; soft: string; labe
     case 'manual':
       return { strong: '#fb923c', soft: 'rgba(251, 146, 60, 0.35)', label: 'manual trigger' };
     case 'clock':
-      return { strong: '#facc15', soft: 'rgba(250, 204, 21, 0.35)', label: 'clock trigger' };
+      return { strong: '#facc15', soft: 'rgba(250, 204, 21, 0.35)', label: 'jittered trigger' };
     case 'gate-open':
-      return { strong: '#22c55e', soft: 'rgba(34, 197, 94, 0.35)', label: 'gate open' };
+      return { strong: '#22c55e', soft: 'rgba(34, 197, 94, 0.35)', label: 'jittered gate open' };
     case 'gate-close':
-      return { strong: '#60a5fa', soft: 'rgba(96, 165, 250, 0.35)', label: 'gate closed' };
+      return { strong: '#60a5fa', soft: 'rgba(96, 165, 250, 0.35)', label: 'jittered gate close' };
     default:
       return { strong: '#facc15', soft: 'rgba(250, 204, 21, 0.35)', label: 'event' };
   }
@@ -464,6 +551,10 @@ function formatSlewAmount(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+function formatJitterAmount(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
 function slewCoefficient(deltaMs: number): number {
   if (slewAmount <= 0) {
     return 1;
@@ -474,37 +565,32 @@ function slewCoefficient(deltaMs: number): number {
 }
 
 function chooseSampleHoldEvent(timeMs: number): EventSource {
-  const clockDue = timeMs - lastClockPulseTime >= clockIntervalMs();
-
   if (manualTriggerQueued) {
     manualTriggerQueued = false;
-    lastClockPulseTime = timeMs;
     return 'manual';
   }
 
-  if (clockDue) {
-    lastClockPulseTime = timeMs;
-    clockPulseVisibleUntil = timeMs + 260;
+  if (takeJitteredClockEvent(timeMs)) {
     return 'clock';
   }
 
   return null;
 }
 
-function calculateTrackHoldEvent(gateOpen: boolean): EventSource {
+function calculateTrackHoldEvent(timeMs: number): EventSource {
   if (manualTriggerQueued) {
     manualTriggerQueued = false;
   }
 
-  if (gateOpen !== previousGateOpen) {
-    previousGateOpen = gateOpen;
-    return gateOpen ? 'gate-open' : 'gate-close';
+  if (takeJitteredClockEvent(timeMs)) {
+    gateOpenState = !gateOpenState;
+    return gateOpenState ? 'gate-open' : 'gate-close';
   }
 
   return null;
 }
 
-function updateRawOutput(currentInput: number, timeMs: number, gateOpen: boolean): EventSource {
+function updateRawOutput(currentInput: number, timeMs: number): EventSource {
   if (mode === 'sample-hold') {
     const eventSource = chooseSampleHoldEvent(timeMs);
 
@@ -517,9 +603,9 @@ function updateRawOutput(currentInput: number, timeMs: number, gateOpen: boolean
     return eventSource;
   }
 
-  const eventSource = calculateTrackHoldEvent(gateOpen);
+  const eventSource = calculateTrackHoldEvent(timeMs);
 
-  if (gateOpen) {
+  if (gateOpenState) {
     rawOutputVoltage = currentInput;
   }
 
@@ -537,12 +623,14 @@ function updateSlewedOutput(deltaMs: number): void {
 }
 
 function animate(timeMs: number): void {
+  ensureClockSchedule(timeMs);
+
   const currentInput = calculateInputVoltage(timeMs);
-  const gateOpen = isGateOpen(timeMs);
+  const regularClock = takeRegularClockMark(timeMs);
   const deltaMs = lastFrameTime === 0 ? 16.7 : Math.min(50, timeMs - lastFrameTime);
   lastFrameTime = timeMs;
 
-  const eventSource = updateRawOutput(currentInput, timeMs, gateOpen);
+  const eventSource = updateRawOutput(currentInput, timeMs);
   updateSlewedOutput(deltaMs);
 
   history.push({
@@ -550,7 +638,8 @@ function animate(timeMs: number): void {
     rawOutput: rawOutputVoltage,
     slewedOutput: slewedOutputVoltage,
     event: eventSource,
-    gateOpen: mode === 'track-hold' && gateOpen,
+    regularClock,
+    gateOpen: mode === 'track-hold' && gateOpenState,
   });
 
   while (history.length > HISTORY_LENGTH) {
@@ -562,6 +651,7 @@ function animate(timeMs: number): void {
   const height = canvas.height;
 
   drawGrid(width, height);
+  drawRegularClockMarks(visiblePoints, width, height);
   drawGateBands(visiblePoints, width, height);
   drawOutputTrace(visiblePoints, width, height);
   drawEvents(visiblePoints, width, height);
@@ -575,23 +665,24 @@ function animate(timeMs: number): void {
   slewedValue.value = `Slewed ${formatVoltage(slewedOutputVoltage)}`;
   clockRateValue.value = formatClockRate(clockRateHz);
   slewAmountValue.value = formatSlewAmount(slewAmount);
+  jitterAmountValue.value = formatJitterAmount(jitterAmount);
 
   const eventAge = timeMs - lastEventTime;
   const recentlyChanged = eventAge < 450;
 
   if (mode === 'sample-hold') {
-    triggerState.value = recentlyChanged ? `${lastEventSource === 'manual' ? 'Manual' : 'Clock'} trigger` : 'Waiting';
-    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Clock pulse' : 'Clock waiting';
+    triggerState.value = recentlyChanged ? `${lastEventSource === 'manual' ? 'Manual' : 'Jittered clock'} trigger` : 'Waiting';
+    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered clock pulse' : 'Jittered clock waiting';
     gateState.value = 'Gate inactive in S&H';
   } else {
-    triggerState.value = gateOpen ? 'Tracking target' : 'Holding target';
-    clockPulseState.value = 'Clock drives gate';
-    gateState.value = gateOpen ? 'Gate open' : 'Gate closed';
+    triggerState.value = gateOpenState ? 'Tracking target' : 'Holding target';
+    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered gate edge' : 'Jitter drives gate';
+    gateState.value = gateOpenState ? 'Gate open' : 'Gate closed';
   }
 
-  triggerState.classList.toggle('is-triggered', mode === 'track-hold' ? gateOpen : recentlyChanged);
+  triggerState.classList.toggle('is-triggered', mode === 'track-hold' ? gateOpenState : recentlyChanged);
   clockPulseState.classList.toggle('is-triggered', timeMs < clockPulseVisibleUntil);
-  gateState.classList.toggle('is-triggered', mode === 'track-hold' && gateOpen);
+  gateState.classList.toggle('is-triggered', mode === 'track-hold' && gateOpenState);
 
   requestAnimationFrame(animate);
 }
@@ -599,4 +690,5 @@ function animate(timeMs: number): void {
 updateModeText();
 clockRateValue.value = formatClockRate(clockRateHz);
 slewAmountValue.value = formatSlewAmount(slewAmount);
+jitterAmountValue.value = formatJitterAmount(jitterAmount);
 requestAnimationFrame(animate);
