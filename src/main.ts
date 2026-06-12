@@ -1,9 +1,11 @@
 import './styles.css';
 
+type TriggerSource = 'manual' | 'clock' | null;
+
 type SamplePoint = {
   input: number;
   held: number;
-  trigger: boolean;
+  trigger: TriggerSource;
 };
 
 type PlotBox = {
@@ -15,6 +17,7 @@ type PlotBox = {
 
 const HISTORY_LENGTH = 220;
 const POINT_COUNT = 160;
+const DEFAULT_CLOCK_RATE_HZ = 1;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -31,9 +34,9 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v0.2</p>
+      <p class="eyebrow">Software Prototype v0.3</p>
       <h1>Sample Hold Lab</h1>
-      <p class="intro">A fixed visual patch for understanding Sample & Hold behaviour before adding audio, VCOs, clocks, or free patching.</p>
+      <p class="intro">A fixed visual patch for understanding Sample & Hold behaviour before adding audio, VCOs, Track & Hold, or free patching.</p>
     </header>
 
     <section class="patch-flow" aria-label="Fixed patch signal flow">
@@ -67,10 +70,21 @@ app.innerHTML = `
       </article>
 
       <article class="module-card trigger-module">
-        <span class="module-label">Event source</span>
-        <h2>Manual Trigger</h2>
-        <p>Tells Sample & Hold when to capture.</p>
-        <button id="triggerButton" type="button">Trigger sample</button>
+        <span class="module-label">Event sources</span>
+        <h2>Trigger</h2>
+        <p>Manual trigger or internal clock tells Sample & Hold when to capture.</p>
+
+        <div class="event-control-group">
+          <button id="triggerButton" type="button">Manual trigger</button>
+        </div>
+
+        <label class="clock-control" for="clockRate">
+          <span>Clock rate</span>
+          <input id="clockRate" type="range" min="0.25" max="4" step="0.25" value="1" />
+          <output id="clockRateValue">1.00 Hz</output>
+        </label>
+
+        <output id="clockPulseState" class="clock-pulse-state">Clock waiting</output>
       </article>
 
       <div class="cable trigger-cable" aria-hidden="true">
@@ -82,12 +96,13 @@ app.innerHTML = `
       <div class="scope-header">
         <div>
           <h2>Scope</h2>
-          <p>Input moves continuously. Held output changes only when manually triggered.</p>
+          <p>Input moves continuously. Held output changes on manual trigger or clock pulse.</p>
         </div>
         <div class="legend" aria-label="Scope legend">
           <span><i class="legend-line input-line"></i>Input LFO</span>
           <span><i class="legend-line held-line"></i>Held output</span>
-          <span><i class="legend-pulse"></i>Latest trigger</span>
+          <span><i class="legend-pulse clock-pulse-line"></i>Clock trigger</span>
+          <span><i class="legend-pulse manual-pulse-line"></i>Manual trigger</span>
         </div>
       </div>
       <canvas id="scope" width="960" height="360" aria-label="Visual waveform scope with voltage labels"></canvas>
@@ -102,11 +117,14 @@ app.innerHTML = `
 
 const canvas = document.querySelector<HTMLCanvasElement>('#scope');
 const triggerButton = document.querySelector<HTMLButtonElement>('#triggerButton');
+const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
 const inputValue = document.querySelector<HTMLOutputElement>('#inputValue');
 const heldValue = document.querySelector<HTMLOutputElement>('#heldValue');
 const triggerState = document.querySelector<HTMLOutputElement>('#triggerState');
+const clockRateValue = document.querySelector<HTMLOutputElement>('#clockRateValue');
+const clockPulseState = document.querySelector<HTMLOutputElement>('#clockPulseState');
 
-if (!canvas || !triggerButton || !inputValue || !heldValue || !triggerState) {
+if (!canvas || !triggerButton || !clockRateInput || !inputValue || !heldValue || !triggerState || !clockRateValue || !clockPulseState) {
   throw new Error('Required app elements were not found');
 }
 
@@ -118,11 +136,20 @@ if (!ctx) {
 
 let heldVoltage = 0;
 let lastTriggerTime = 0;
+let lastClockPulseTime = 0;
+let clockPulseVisibleUntil = 0;
+let clockRateHz = DEFAULT_CLOCK_RATE_HZ;
 let manualTriggerQueued = false;
+let lastTriggerSource: TriggerSource = null;
 const history: SamplePoint[] = [];
 
 triggerButton.addEventListener('click', () => {
   manualTriggerQueued = true;
+});
+
+clockRateInput.addEventListener('input', () => {
+  clockRateHz = Number(clockRateInput.value);
+  clockRateValue.value = formatClockRate(clockRateHz);
 });
 
 function calculateInputVoltage(timeMs: number): number {
@@ -150,6 +177,10 @@ function voltageToY(value: number, height: number): number {
 
 function indexToX(index: number, width: number): number {
   return PLOT.left + (plotWidth(width) / (POINT_COUNT - 1)) * index;
+}
+
+function clockIntervalMs(): number {
+  return 1000 / clockRateHz;
 }
 
 function drawGrid(width: number, height: number): void {
@@ -246,16 +277,17 @@ function drawHeldStepping(points: SamplePoint[], width: number, height: number):
 }
 
 function drawTriggers(points: SamplePoint[], width: number, height: number): void {
-  const triggerIndexes = points
+  const triggerPoints = points
     .map((point, index) => ({ point, index }))
-    .filter(({ point }) => point.trigger)
-    .map(({ index }) => index);
+    .filter(({ point }) => point.trigger !== null);
 
-  triggerIndexes.forEach((index, triggerNumber) => {
-    const isLatest = triggerNumber === triggerIndexes.length - 1;
+  triggerPoints.forEach(({ point, index }, triggerNumber) => {
+    const isLatest = triggerNumber === triggerPoints.length - 1;
     const x = indexToX(index, width);
+    const color = point.trigger === 'manual' ? '251, 146, 60' : '250, 204, 21';
+    const label = point.trigger === 'manual' ? 'latest manual' : 'latest clock';
 
-    ctx.strokeStyle = isLatest ? 'rgba(250, 204, 21, 1)' : 'rgba(250, 204, 21, 0.35)';
+    ctx.strokeStyle = isLatest ? `rgba(${color}, 1)` : `rgba(${color}, 0.35)`;
     ctx.lineWidth = isLatest ? 4 : 2;
     ctx.beginPath();
     ctx.moveTo(x, PLOT.top);
@@ -263,7 +295,7 @@ function drawTriggers(points: SamplePoint[], width: number, height: number): voi
     ctx.stroke();
 
     if (isLatest) {
-      ctx.fillStyle = '#facc15';
+      ctx.fillStyle = `rgb(${color})`;
       ctx.beginPath();
       ctx.moveTo(x, PLOT.top + 2);
       ctx.lineTo(x - 8, PLOT.top + 18);
@@ -271,11 +303,10 @@ function drawTriggers(points: SamplePoint[], width: number, height: number): voi
       ctx.closePath();
       ctx.fill();
 
-      ctx.fillStyle = '#facc15';
       ctx.font = '800 12px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText('latest trigger', x, PLOT.top + 24);
+      ctx.fillText(label, x, PLOT.top + 24);
     }
   });
 }
@@ -320,20 +351,42 @@ function formatVoltage(value: number): string {
   return `${value.toFixed(2)} V`;
 }
 
+function formatClockRate(value: number): string {
+  return `${value.toFixed(2)} Hz`;
+}
+
+function chooseTriggerSource(timeMs: number): TriggerSource {
+  const clockDue = timeMs - lastClockPulseTime >= clockIntervalMs();
+
+  if (manualTriggerQueued) {
+    manualTriggerQueued = false;
+    lastClockPulseTime = timeMs;
+    return 'manual';
+  }
+
+  if (clockDue) {
+    lastClockPulseTime = timeMs;
+    clockPulseVisibleUntil = timeMs + 260;
+    return 'clock';
+  }
+
+  return null;
+}
+
 function animate(timeMs: number): void {
   const currentInput = calculateInputVoltage(timeMs);
-  const triggered = manualTriggerQueued;
+  const triggerSource = chooseTriggerSource(timeMs);
 
-  if (triggered) {
+  if (triggerSource) {
     heldVoltage = currentInput;
     lastTriggerTime = timeMs;
-    manualTriggerQueued = false;
+    lastTriggerSource = triggerSource;
   }
 
   history.push({
     input: currentInput,
     held: heldVoltage,
-    trigger: triggered,
+    trigger: triggerSource,
   });
 
   while (history.length > HISTORY_LENGTH) {
@@ -355,10 +408,16 @@ function animate(timeMs: number): void {
   heldValue.value = formatVoltage(heldVoltage);
 
   const triggerAge = timeMs - lastTriggerTime;
-  triggerState.value = triggerAge < 450 ? 'Triggered' : 'Waiting';
-  triggerState.classList.toggle('is-triggered', triggerAge < 450);
+  const recentlyTriggered = triggerAge < 450;
+  triggerState.value = recentlyTriggered ? `${lastTriggerSource === 'manual' ? 'Manual' : 'Clock'} trigger` : 'Waiting';
+  triggerState.classList.toggle('is-triggered', recentlyTriggered);
+
+  const clockPulseVisible = timeMs < clockPulseVisibleUntil;
+  clockPulseState.value = clockPulseVisible ? 'Clock pulse' : 'Clock waiting';
+  clockPulseState.classList.toggle('is-triggered', clockPulseVisible);
 
   requestAnimationFrame(animate);
 }
 
+clockRateValue.value = formatClockRate(clockRateHz);
 requestAnimationFrame(animate);
