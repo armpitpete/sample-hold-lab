@@ -21,7 +21,7 @@
 
 .processor-module,
 .trigger-module {
-  min-height: 370px !important;
+  min-height: 390px !important;
 }
 
 .trigger-cable {
@@ -125,6 +125,14 @@
 
 .raw-line {
   background: repeating-linear-gradient(90deg, #a78bfa 0 8px, transparent 8px 13px) !important;
+}
+
+.super-high-line {
+  background: #22c55e !important;
+}
+
+.super-low-line {
+  background: #60a5fa !important;
 }
 
 .regular-clock-line {
