@@ -1,0 +1,62 @@
+.patch-flow {
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr) 72px minmax(0, 1fr) !important;
+  grid-template-areas:
+    "source cv processor out destination"
+    ". . triggerCable . ."
+    ". . trigger . ." !important;
+  align-items: stretch !important;
+}
+
+.module-card {
+  display: flex !important;
+  min-height: 170px !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+.cv-cable,
+.output-cable {
+  min-height: 170px !important;
+}
+
+.trigger-cable {
+  min-height: 52px !important;
+}
+
+.trigger-cable::before {
+  left: 50% !important;
+  right: auto !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 3px !important;
+  height: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+.trigger-cable::after {
+  right: auto !important;
+  left: 50% !important;
+  top: 0 !important;
+  bottom: auto !important;
+  transform: translateX(-50%) rotate(-45deg) !important;
+}
+
+@media (max-width: 880px) {
+  .patch-flow {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "source"
+      "cv"
+      "processor"
+      "triggerCable"
+      "trigger"
+      "out"
+      "destination" !important;
+  }
+
+  .cv-cable,
+  .output-cable,
+  .trigger-cable {
+    min-height: 42px !important;
+  }
+}
