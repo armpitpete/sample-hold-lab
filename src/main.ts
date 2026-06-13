@@ -1,6 +1,7 @@
 import './styles.css';
 
 type Mode = 'sample-hold' | 'track-hold' | 'super-sample-hold';
+type InputSource = 'lfo' | 'noise-placeholder' | 'manual-cv-placeholder';
 type EventSource = 'manual' | 'clock' | 'gate-open' | 'gate-close' | null;
 
 type SamplePoint = {
@@ -45,17 +46,28 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v0.7</p>
+      <p class="eyebrow">Software Prototype v1.0</p>
       <h1>Sample Hold Lab</h1>
       <p class="intro">A fixed visual patch showing what Super S&amp;H adds compared with normal Sample &amp; Hold: several related held control paths from one trigger.</p>
     </header>
 
-    <section class="patch-flow" aria-label="Fixed patch signal flow">
+    <section class="patch-flow" aria-label="Limited patch signal flow">
       <article class="module-card source-module">
         <span class="module-label">Voltage source</span>
-        <h2>LFO</h2>
-        <p>Creates a continuously changing voltage.</p>
+        <h2 id="inputSourceTitle">LFO</h2>
+        <p id="inputSourceDescription">Creates a continuously changing voltage.</p>
+
+        <label class="source-select-control" for="inputSourceSelect">
+          <span>Input source</span>
+          <select id="inputSourceSelect">
+            <option value="lfo" selected>LFO</option>
+            <option value="noise-placeholder">Noise placeholder</option>
+            <option value="manual-cv-placeholder">Manual CV placeholder</option>
+          </select>
+        </label>
+
         <output id="inputValue">0.00 V</output>
+        <output id="inputSourceStatus" class="source-status">LFO active</output>
       </article>
 
       <div class="cable cv-cable" aria-hidden="true">
@@ -133,7 +145,7 @@ app.innerHTML = `
           <p id="scopeDescription">S&amp;H mode: one held/slewed output from each trigger.</p>
         </div>
         <div class="legend" aria-label="Scope legend">
-          <span><i class="legend-line input-line"></i>Input LFO</span>
+          <span><i class="legend-line input-line"></i><span id="inputLegendLabel">Input LFO</span></span>
           <span><i class="legend-line raw-line"></i>Raw main</span>
           <span><i class="legend-line held-line"></i>Slewed main</span>
           <span><i class="legend-line super-high-line"></i>Super high</span>
@@ -159,6 +171,11 @@ const triggerButton = document.querySelector<HTMLButtonElement>('#triggerButton'
 const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
 const slewAmountInput = document.querySelector<HTMLInputElement>('#slewAmount');
 const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmount');
+const inputSourceSelect = document.querySelector<HTMLSelectElement>('#inputSourceSelect');
+const inputSourceTitle = document.querySelector<HTMLHeadingElement>('#inputSourceTitle');
+const inputSourceDescription = document.querySelector<HTMLParagraphElement>('#inputSourceDescription');
+const inputSourceStatus = document.querySelector<HTMLOutputElement>('#inputSourceStatus');
+const inputLegendLabel = document.querySelector<HTMLSpanElement>('#inputLegendLabel');
 const inputValue = document.querySelector<HTMLOutputElement>('#inputValue');
 const rawValue = document.querySelector<HTMLOutputElement>('#rawValue');
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
@@ -173,7 +190,7 @@ const modeDescription = document.querySelector<HTMLParagraphElement>('#modeDescr
 const scopeDescription = document.querySelector<HTMLParagraphElement>('#scopeDescription');
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]');
 
-if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputValue || !rawValue || !slewedValue || !superValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
+if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputSourceSelect || !inputSourceTitle || !inputSourceDescription || !inputSourceStatus || !inputLegendLabel || !inputValue || !rawValue || !slewedValue || !superValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
   throw new Error('Required app elements were not found');
 }
 
@@ -184,6 +201,7 @@ if (!ctx) {
 }
 
 let mode: Mode = 'sample-hold';
+let inputSource: InputSource = 'lfo';
 let rawMainVoltage = 0;
 let rawHighVoltage = 0;
 let rawLowVoltage = 0;
@@ -226,6 +244,16 @@ jitterAmountInput.addEventListener('input', () => {
   clockScheduleNeedsReset = true;
 });
 
+inputSourceSelect.addEventListener('change', () => {
+  inputSource = inputSourceSelect.value as InputSource;
+  history.length = 0;
+  lastEventSource = null;
+  lastEventTime = 0;
+  gateOpenState = false;
+  clockScheduleNeedsReset = true;
+  updateInputSourceText();
+});
+
 modeInputs.forEach((input) => {
   input.addEventListener('change', () => {
     mode = input.value as Mode;
@@ -239,9 +267,36 @@ modeInputs.forEach((input) => {
 });
 
 function calculateInputVoltage(timeMs: number): number {
+  if (inputSource !== 'lfo') {
+    return 0;
+  }
+
   const slowWave = Math.sin(timeMs / 850);
   const gentleMovement = Math.sin(timeMs / 2300) * 0.28;
   return clamp(slowWave * 3.6 + gentleMovement, -5, 5);
+}
+
+function updateInputSourceText(): void {
+  if (inputSource === 'lfo') {
+    inputSourceTitle.textContent = 'LFO';
+    inputSourceDescription.textContent = 'Creates a continuously changing voltage.';
+    inputSourceStatus.value = 'LFO active';
+    inputLegendLabel.textContent = 'Input LFO';
+    return;
+  }
+
+  if (inputSource === 'noise-placeholder') {
+    inputSourceTitle.textContent = 'Noise';
+    inputSourceDescription.textContent = 'Placeholder only. Real noise source comes in v1.1.';
+    inputSourceStatus.value = 'Placeholder';
+    inputLegendLabel.textContent = 'Input placeholder';
+    return;
+  }
+
+  inputSourceTitle.textContent = 'Manual CV';
+  inputSourceDescription.textContent = 'Placeholder only. Real manual CV source comes in v1.2.';
+  inputSourceStatus.value = 'Placeholder';
+  inputLegendLabel.textContent = 'Input placeholder';
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -746,6 +801,7 @@ function animate(timeMs: number): void {
   requestAnimationFrame(animate);
 }
 
+updateInputSourceText();
 updateModeText();
 clockRateValue.value = formatClockRate(clockRateHz);
 slewAmountValue.value = formatSlewAmount(slewAmount);
