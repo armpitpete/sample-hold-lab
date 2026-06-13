@@ -29,6 +29,7 @@ const POINT_COUNT = 160;
 const DEFAULT_CLOCK_RATE_HZ = 1;
 const DEFAULT_SLEW_AMOUNT = 0.35;
 const DEFAULT_JITTER_AMOUNT = 0.1;
+const DEFAULT_MANUAL_CV_VOLTS = 0;
 const SUPER_SPREAD_VOLTS = 0.9;
 const NOISE_UPDATE_INTERVAL_MS = 90;
 const NOISE_SMOOTHING_AMOUNT = 0.18;
@@ -48,7 +49,7 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v1.1</p>
+      <p class="eyebrow">Software Prototype v1.2</p>
       <h1>Sample Hold Lab</h1>
       <p class="intro">A fixed visual patch showing what Super S&amp;H adds compared with normal Sample &amp; Hold: several related held control paths from one trigger.</p>
     </header>
@@ -64,8 +65,14 @@ app.innerHTML = `
           <select id="inputSourceSelect">
             <option value="lfo" selected>LFO</option>
             <option value="noise-placeholder">Noise</option>
-            <option value="manual-cv-placeholder">Manual CV placeholder</option>
+            <option value="manual-cv-placeholder">Manual CV</option>
           </select>
+        </label>
+
+        <label class="manual-cv-control" id="manualCvControl" for="manualCvInput" hidden>
+          <span>Manual CV</span>
+          <input id="manualCvInput" type="range" min="-5" max="5" step="0.1" value="0" />
+          <output id="manualCvValue">0.00 V</output>
         </label>
 
         <output id="inputValue">0.00 V</output>
@@ -174,6 +181,9 @@ const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
 const slewAmountInput = document.querySelector<HTMLInputElement>('#slewAmount');
 const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmount');
 const inputSourceSelect = document.querySelector<HTMLSelectElement>('#inputSourceSelect');
+const manualCvControl = document.querySelector<HTMLLabelElement>('#manualCvControl');
+const manualCvInput = document.querySelector<HTMLInputElement>('#manualCvInput');
+const manualCvValue = document.querySelector<HTMLOutputElement>('#manualCvValue');
 const inputSourceTitle = document.querySelector<HTMLHeadingElement>('#inputSourceTitle');
 const inputSourceDescription = document.querySelector<HTMLParagraphElement>('#inputSourceDescription');
 const inputSourceStatus = document.querySelector<HTMLOutputElement>('#inputSourceStatus');
@@ -192,7 +202,7 @@ const modeDescription = document.querySelector<HTMLParagraphElement>('#modeDescr
 const scopeDescription = document.querySelector<HTMLParagraphElement>('#scopeDescription');
 const modeInputs = document.querySelectorAll<HTMLInputElement>('input[name="mode"]');
 
-if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputSourceSelect || !inputSourceTitle || !inputSourceDescription || !inputSourceStatus || !inputLegendLabel || !inputValue || !rawValue || !slewedValue || !superValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
+if (!canvas || !triggerButton || !clockRateInput || !slewAmountInput || !jitterAmountInput || !inputSourceSelect || !manualCvControl || !manualCvInput || !manualCvValue || !inputSourceTitle || !inputSourceDescription || !inputSourceStatus || !inputLegendLabel || !inputValue || !rawValue || !slewedValue || !superValue || !triggerState || !clockRateValue || !slewAmountValue || !jitterAmountValue || !clockPulseState || !gateState || !modeDescription || !scopeDescription) {
   throw new Error('Required app elements were not found');
 }
 
@@ -204,6 +214,7 @@ if (!ctx) {
 
 let mode: Mode = 'sample-hold';
 let inputSource: InputSource = 'lfo';
+let manualCvVoltage = DEFAULT_MANUAL_CV_VOLTS;
 let visualNoiseVoltage = 0;
 let noiseTargetVoltage = 0;
 let nextNoiseTargetTime = 0;
@@ -249,6 +260,11 @@ jitterAmountInput.addEventListener('input', () => {
   clockScheduleNeedsReset = true;
 });
 
+manualCvInput.addEventListener('input', () => {
+  manualCvVoltage = Number(manualCvInput.value);
+  manualCvValue.value = formatVoltage(manualCvVoltage);
+});
+
 inputSourceSelect.addEventListener('change', () => {
   inputSource = inputSourceSelect.value as InputSource;
   history.length = 0;
@@ -258,6 +274,7 @@ inputSourceSelect.addEventListener('change', () => {
   clockScheduleNeedsReset = true;
   resetNoiseSource();
   updateInputSourceText();
+  updateManualCvControl();
 });
 
 modeInputs.forEach((input) => {
@@ -281,7 +298,7 @@ function calculateInputVoltage(timeMs: number): number {
     return calculateNoiseInputVoltage(timeMs);
   }
 
-  return 0;
+  return manualCvVoltage;
 }
 
 function calculateLfoInputVoltage(timeMs: number): number {
@@ -324,9 +341,13 @@ function updateInputSourceText(): void {
   }
 
   inputSourceTitle.textContent = 'Manual CV';
-  inputSourceDescription.textContent = 'Placeholder only. Real manual CV source comes in v1.2.';
-  inputSourceStatus.value = 'Placeholder';
-  inputLegendLabel.textContent = 'Input placeholder';
+  inputSourceDescription.textContent = 'Creates a user-controlled visual voltage.';
+  inputSourceStatus.value = 'Manual CV active';
+  inputLegendLabel.textContent = 'Input manual CV';
+}
+
+function updateManualCvControl(): void {
+  manualCvControl.hidden = inputSource !== 'manual-cv-placeholder';
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -832,7 +853,8 @@ function animate(timeMs: number): void {
 }
 
 updateInputSourceText();
-updateModeText();
+updateManualCvControl();
+manualCvValue.value = formatVoltage(manualCvVoltage);
 clockRateValue.value = formatClockRate(clockRateHz);
 slewAmountValue.value = formatSlewAmount(slewAmount);
 jitterAmountValue.value = formatJitterAmount(jitterAmount);
