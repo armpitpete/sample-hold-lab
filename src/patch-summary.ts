@@ -18,7 +18,7 @@ const modeNames: Record<HoldMode, string> = {
 
 const destinationNames: Record<Destination, string> = {
   scope: 'Scope',
-  'filter-cutoff': 'Filter cutoff placeholder',
+  'filter-cutoff': 'Filter cutoff visual demo',
   pitch: 'Pitch visual demo',
   level: 'Level placeholder',
 };
@@ -32,7 +32,7 @@ const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmoun
 const manualCvInput = document.querySelector<HTMLInputElement>('#manualCvInput');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.0';
+  eyebrow.textContent = 'Software Prototype v2.1';
 }
 
 if (!ruleCard || !inputSourceSelect || !clockRateInput || !slewAmountInput || !jitterAmountInput || !manualCvInput) {
