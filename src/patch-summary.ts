@@ -20,7 +20,7 @@ const destinationNames: Record<Destination, string> = {
   scope: 'Scope',
   'filter-cutoff': 'Filter cutoff visual demo',
   pitch: 'Pitch visual demo',
-  level: 'Level placeholder',
+  level: 'Level visual demo',
 };
 
 const eyebrow = document.querySelector<HTMLElement>('.eyebrow');
@@ -32,7 +32,7 @@ const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmoun
 const manualCvInput = document.querySelector<HTMLInputElement>('#manualCvInput');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.1';
+  eyebrow.textContent = 'Software Prototype v2.2';
 }
 
 if (!ruleCard || !inputSourceSelect || !clockRateInput || !slewAmountInput || !jitterAmountInput || !manualCvInput) {
