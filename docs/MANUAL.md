@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.1**.
+The current manual pass is **v3.2**.
 
 ## Current decision
 
@@ -83,6 +83,39 @@ These parts remain visual only:
 If the sound is annoying, too much, or not needed, press **Panic / Stop Audio**.
 
 The visual part of the app can still be used without audio.
+
+## Mode cheat sheet
+
+Use this section when you want to know which mode to try next.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+Filter cutoff, level, Super high, and Super low remain visual only.
+
+| Mode | What it does | What to watch on the Scope | If audio is running | Try it when... |
+|---|---|---|---|---|
+| S&H | Captures one input value when a trigger happens, then holds it. | Watch the input keep moving while the held value changes in steps. | Pitch changes in steps from one held value to the next. | You want the clearest first example of Sample & Hold. |
+| T&H | Follows the input while the gate is open, then holds when the gate closes. | Watch the output move while tracking, then freeze while holding. | Pitch moves while tracking, then stays fixed while holding. | You want to compare following with holding. |
+| Super S&H | Shows one main held output plus related Super high and Super low companion outputs. | Watch the main, Super high, and Super low outputs move as related paths. | Only the main output controls oscillator pitch. | You want to see related visual control paths from one sampled value. |
+
+### Mode boundary
+
+S&H, T&H, and Super S&H all help explain held control voltage.
+
+They do not add new audio destinations.
+
+In Super S&H, the companion outputs are visual only:
+
+- Super high companion output
+- Super low companion output
+
+They do not make separate notes.
+
+They do not control separate oscillators.
 
 ## 1. What Sample Hold Lab is
 
