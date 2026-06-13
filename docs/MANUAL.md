@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.0**.
+The current manual pass is **v3.1**.
 
 ## Current decision
 
@@ -50,6 +50,39 @@ At the moment:
 - level is visual only
 - Super high is visual only
 - Super low is visual only
+
+## Quick start: first 5 minutes
+
+Use this path the first time you open the app.
+
+It keeps the patch simple.
+
+Audio is optional.
+
+1. Set **Input source** to **LFO**.
+2. Set **Mode** to **S&H**.
+3. Set **Destination** to **Scope**.
+4. Watch the moving input trace.
+5. Press **Manual trigger**.
+6. Notice that the held value changes when the trigger happens.
+7. Change **Slew amount**.
+8. Notice that low slew moves quickly and high slew glides more slowly.
+9. Optional: press **Start Audio**.
+10. Listen to the oscillator pitch follow the held/slewed main CV.
+11. Press **Panic / Stop Audio** when finished.
+
+During this quick start, only pitch is connected to audio.
+
+These parts remain visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+If the sound is annoying, too much, or not needed, press **Panic / Stop Audio**.
+
+The visual part of the app can still be used without audio.
 
 ## 1. What Sample Hold Lab is
 
