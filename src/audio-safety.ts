@@ -88,6 +88,12 @@ function audioContextConstructor(): typeof AudioContext | undefined {
 }
 
 function currentHeldVoltage(): number {
+  const datasetVoltage = Number(slewedValue?.dataset.voltage);
+
+  if (Number.isFinite(datasetVoltage)) {
+    return clamp(datasetVoltage, MIN_HELD_CV, MAX_HELD_CV);
+  }
+
   const text = slewedValue?.value || slewedValue?.textContent || '0';
   const match = text.match(/-?\d+(\.\d+)?/);
   const voltage = match ? Number(match[0]) : 0;
