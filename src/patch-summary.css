@@ -1,0 +1,47 @@
+.patch-summary-panel {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 24px;
+  padding: 22px;
+  background: rgba(15, 23, 42, 0.78);
+  box-shadow: 0 18px 60px rgba(2, 6, 23, 0.36);
+}
+
+.patch-summary-panel h2 {
+  margin-bottom: 8px;
+}
+
+.patch-summary-intro {
+  margin-bottom: 16px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.patch-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.patch-summary-list div {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  padding: 12px;
+  background: #020617;
+}
+
+.patch-summary-list dt {
+  margin-bottom: 6px;
+  color: #bfdbfe;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.patch-summary-list dd {
+  margin: 0;
+  color: #f8fafc;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
