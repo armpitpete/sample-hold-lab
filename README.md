@@ -4,17 +4,31 @@ Sample Hold Lab is a small visual control-voltage learning app.
 
 It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, and visual destination demos through visible signal flow.
 
-Current stable prototype: **v2.3**.
+Current planning prototype: **v2.4**.
 
-## Current freeze
+Current stable visual freeze: **v2.3**.
 
-**v2.3 freezes Phase 3.**
+## Current plan
 
-Phase 3 is a visual destination demo layer.
+**v2.4 plans Phase 4.**
 
-Pitch, filter cutoff, and level are still visual only. The app still has no audio engine, no real VCO / VCF / VCA sound, no real synth voice, and no free patch cables.
+Phase 4 may add a limited audio demo later, but this v2.4 issue adds no audio.
 
-Later phases are not being built yet.
+The app still behaves like the v2.3 visual-only freeze. There is still no audio engine, no oscillator sound, no filter sound, no amplifier sound, no Start Audio button, and no Panic button.
+
+## Phase 4 plan
+
+Phase 4 should add sound only in small, safe steps.
+
+Safe order:
+
+1. Add audio safety controls first.
+2. Add one oscillator only.
+3. Map held CV to pitch only.
+4. Keep Scope and visual destinations working.
+5. Stop before filter or level audio demos.
+
+Phase 4 should demonstrate held CV. It should not turn Sample Hold Lab into a full synth.
 
 ## What this project teaches
 
@@ -37,7 +51,7 @@ This project is:
 - a limited patchable visual prototype
 - a visual destination demo layer
 - a small Vite + TypeScript browser app
-- a stable reference build after Phase 3
+- a Phase 4 planning build after the v2.3 visual freeze
 
 ## What this project is not
 
@@ -158,7 +172,8 @@ No amplifier or audio is running.
 | v2.0 | Improved pitch-style visual destination | Complete |
 | v2.1 | Improved filter-cutoff-style visual destination | Complete |
 | v2.2 | Improved level-style visual destination | Complete |
-| v2.3 | Phase 3 stable freeze | Current |
+| v2.3 | Phase 3 stable freeze | Frozen |
+| v2.4 | Plan Phase 4 limited audio demo | Current |
 
 ## Run locally
 
@@ -188,14 +203,14 @@ npm run preview
 
 ## Local test checklist
 
-Before closing the v2.3 stable freeze issue, check:
+Before closing the v2.4 planning issue, check:
 
 ```text
 1. npm install completes.
 2. npm run dev starts the Vite server.
 3. npm run build completes.
 4. App loads without console-breaking errors.
-5. Visible prototype label shows Software Prototype v2.3.
+5. Visible prototype label shows Software Prototype v2.4.
 6. LFO still works.
 7. Noise still works.
 8. Manual CV still works.
@@ -207,30 +222,32 @@ Before closing the v2.3 stable freeze issue, check:
 14. Filter cutoff visual demo responds to held CV.
 15. Level visual demo responds to held CV.
 16. Patch summary updates correctly.
-17. No audio, VCO, VCF, VCA, free patching, presets, save/load, quantising, probability, burst sampling, external MIDI/CV input, or modulation matrix has been added.
+17. No AudioContext has been added.
+18. No oscillator code has been added.
+19. No Start Audio button has been added.
+20. No Panic button has been added.
+21. No sound, filter audio, level audio, MIDI, presets, save/load, or new UI behaviour has been added.
 ```
 
 ## Freeze rule
 
 v2.3 freezes Phase 3 as a stable visual destination demo layer.
 
-Do not add more synth behaviour directly on top of this freeze.
+v2.4 only plans Phase 4 boundaries.
+
+Do not add audio directly on top of the v2.4 planning issue.
 
 Future work should be opened as separate issues and should stay clearly scoped.
 
-Possible later phases:
+Possible later Phase 4 issues:
 
-- first limited audio demo
-- obvious mute/off control
-- simple oscillator pitch demo
-- simple filter or level demo
-- Tauri desktop wrapper
-- proper free patching
-- quantised S&H
-- probability sampling
-- burst sampling
+- add audio safety controls only
+- add one simple oscillator only
+- map held CV to pitch only
+- test visual destinations alongside audio demo
+- stop before filter or level audio demos
 
-These are later extensions, not part of the v2.3 stable prototype.
+These are later extensions, not part of the v2.4 planning issue.
 
 ## Licence
 
