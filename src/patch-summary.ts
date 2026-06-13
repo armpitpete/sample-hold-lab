@@ -32,7 +32,7 @@ const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmoun
 const manualCvInput = document.querySelector<HTMLInputElement>('#manualCvInput');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.5';
+  eyebrow.textContent = 'Software Prototype v2.6';
 }
 
 if (!ruleCard || !inputSourceSelect || !clockRateInput || !slewAmountInput || !jitterAmountInput || !manualCvInput) {
