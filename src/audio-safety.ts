@@ -25,7 +25,7 @@ const ruleCard = document.querySelector<HTMLElement>('.rule-card');
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.7';
+  eyebrow.textContent = 'Software Prototype v2.8';
 }
 
 const insertionTarget = patchSummaryPanel ?? ruleCard;
@@ -39,9 +39,9 @@ audioSafetyPanel.className = 'audio-safety-panel';
 audioSafetyPanel.setAttribute('aria-label', 'Audio demo safety controls');
 audioSafetyPanel.innerHTML = `
   <div>
-    <p class="audio-safety-kicker">Phase 4 pitch mapping</p>
+    <p class="audio-safety-kicker">Phase 4 audio boundary freeze</p>
     <h2>Audio Demo / Safety</h2>
-    <p class="audio-safety-copy">Start Audio plays one quiet oscillator. The existing slewed held CV controls pitch only.</p>
+    <p class="audio-safety-copy">The first audio demo is frozen: one quiet oscillator, with pitch controlled by the slewed main CV only.</p>
   </div>
   <div class="audio-safety-actions">
     <button id="startAudioButton" type="button" class="audio-safety-button">Start Audio</button>
