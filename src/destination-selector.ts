@@ -1,5 +1,6 @@
 import './destination-selector.css';
 import './filter-cutoff-visual.css';
+import './level-visual.css';
 
 type VisualDestination = 'scope' | 'filter-cutoff' | 'pitch' | 'level';
 
@@ -31,8 +32,8 @@ const destinationCopy: Record<VisualDestination, DestinationCopy> = {
   },
   level: {
     title: 'Level',
-    description: 'Visual placeholder only. The held CV is not controlling a real level input yet.',
-    status: 'Level placeholder',
+    description: 'Shows how the held CV would change level visually. No amplifier or audio is running.',
+    status: 'Level visual demo',
     cable: 'CV to level',
   },
 };
@@ -43,7 +44,7 @@ const outputCableLabel = document.querySelector<HTMLElement>('.output-cable span
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.1';
+  eyebrow.textContent = 'Software Prototype v2.2';
 }
 
 if (!destinationModule) {
@@ -67,7 +68,7 @@ selectorLabel.innerHTML = `
     <option value="scope" selected>Scope</option>
     <option value="filter-cutoff">Filter cutoff visual demo</option>
     <option value="pitch">Pitch visual demo</option>
-    <option value="level">Level placeholder</option>
+    <option value="level">Level visual demo</option>
   </select>
 `;
 
@@ -107,18 +108,36 @@ filterVisual.innerHTML = `
   <output id="filterVisualValue">Cutoff CV 0.00 V</output>
 `;
 
+const levelVisual = document.createElement('div');
+levelVisual.id = 'levelVisualDestination';
+levelVisual.className = 'level-visual-destination';
+levelVisual.hidden = true;
+levelVisual.innerHTML = `
+  <div class="level-visual-labels" aria-hidden="true">
+    <span>Quiet</span>
+    <span>Loud</span>
+  </div>
+  <div class="level-meter" aria-label="Level visual response">
+    <div class="level-fill" id="levelFill"></div>
+  </div>
+  <output id="levelVisualValue">Level CV 0.00 V</output>
+`;
+
 destinationModule.insertBefore(selectorLabel, triggerState);
 destinationModule.insertBefore(destinationStatus, triggerState);
 destinationModule.insertBefore(pitchVisual, triggerState);
 destinationModule.insertBefore(filterVisual, triggerState);
+destinationModule.insertBefore(levelVisual, triggerState);
 
 const destinationSelect = selectorLabel.querySelector<HTMLSelectElement>('#destinationSelect');
 const pitchMarker = pitchVisual.querySelector<HTMLElement>('#pitchMarker');
 const pitchVisualValue = pitchVisual.querySelector<HTMLOutputElement>('#pitchVisualValue');
 const filterBand = filterVisual.querySelector<HTMLElement>('#filterBand');
 const filterVisualValue = filterVisual.querySelector<HTMLOutputElement>('#filterVisualValue');
+const levelFill = levelVisual.querySelector<HTMLElement>('#levelFill');
+const levelVisualValue = levelVisual.querySelector<HTMLOutputElement>('#levelVisualValue');
 
-if (!destinationSelect || !pitchMarker || !pitchVisualValue || !filterBand || !filterVisualValue) {
+if (!destinationSelect || !pitchMarker || !pitchVisualValue || !filterBand || !filterVisualValue || !levelFill || !levelVisualValue) {
   throw new Error('Destination selector elements not found');
 }
 
@@ -137,6 +156,7 @@ function updateVisualDestinations(): void {
   const voltage = currentHeldVoltage();
   const normalized = (voltage + 5) / 10;
   const cutoffPercent = 12 + normalized * 88;
+  const levelPercent = normalized * 100;
 
   pitchMarker.style.left = `${normalized * 100}%`;
   pitchVisualValue.value = `Pitch CV ${voltage.toFixed(2)} V`;
@@ -145,6 +165,10 @@ function updateVisualDestinations(): void {
   filterBand.style.width = `${cutoffPercent}%`;
   filterVisualValue.value = `Cutoff CV ${voltage.toFixed(2)} V`;
   filterVisualValue.textContent = `Cutoff CV ${voltage.toFixed(2)} V`;
+
+  levelFill.style.width = `${levelPercent}%`;
+  levelVisualValue.value = `Level CV ${voltage.toFixed(2)} V`;
+  levelVisualValue.textContent = `Level CV ${voltage.toFixed(2)} V`;
 
   requestAnimationFrame(updateVisualDestinations);
 }
@@ -157,6 +181,7 @@ function updateDestination(destination: VisualDestination): void {
   destinationStatus.textContent = copy.status;
   pitchVisual.hidden = destination !== 'pitch';
   filterVisual.hidden = destination !== 'filter-cutoff';
+  levelVisual.hidden = destination !== 'level';
 
   if (outputCableLabel) {
     outputCableLabel.textContent = copy.cable;
