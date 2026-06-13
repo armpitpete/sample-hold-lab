@@ -24,8 +24,8 @@ const destinationCopy: Record<VisualDestination, DestinationCopy> = {
   },
   pitch: {
     title: 'Pitch',
-    description: 'Visual placeholder only. The held CV is not controlling a real pitch input yet.',
-    status: 'Pitch placeholder',
+    description: 'Shows how the held CV would move pitch visually. No oscillator or audio is running.',
+    status: 'Pitch visual demo',
     cable: 'CV to pitch',
   },
   level: {
@@ -39,9 +39,10 @@ const destinationCopy: Record<VisualDestination, DestinationCopy> = {
 const eyebrow = document.querySelector<HTMLElement>('.eyebrow');
 const destinationModule = document.querySelector<HTMLElement>('.destination-module');
 const outputCableLabel = document.querySelector<HTMLElement>('.output-cable span');
+const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v1.3';
+  eyebrow.textContent = 'Software Prototype v2.0';
 }
 
 if (!destinationModule) {
@@ -64,7 +65,7 @@ selectorLabel.innerHTML = `
   <select id="destinationSelect">
     <option value="scope" selected>Scope</option>
     <option value="filter-cutoff">Filter cutoff placeholder</option>
-    <option value="pitch">Pitch placeholder</option>
+    <option value="pitch">Pitch visual demo</option>
     <option value="level">Level placeholder</option>
   </select>
 `;
@@ -75,13 +76,53 @@ destinationStatus.className = 'destination-status';
 destinationStatus.value = destinationCopy.scope.status;
 destinationStatus.textContent = destinationCopy.scope.status;
 
+const pitchVisual = document.createElement('div');
+pitchVisual.id = 'pitchVisualDestination';
+pitchVisual.className = 'pitch-visual-destination';
+pitchVisual.hidden = true;
+pitchVisual.innerHTML = `
+  <div class="pitch-visual-labels" aria-hidden="true">
+    <span>Low</span>
+    <span>High</span>
+  </div>
+  <div class="pitch-track" aria-label="Pitch visual response">
+    <div class="pitch-marker" id="pitchMarker"></div>
+  </div>
+  <output id="pitchVisualValue">Pitch CV 0.00 V</output>
+`;
+
 destinationModule.insertBefore(selectorLabel, triggerState);
 destinationModule.insertBefore(destinationStatus, triggerState);
+destinationModule.insertBefore(pitchVisual, triggerState);
 
 const destinationSelect = selectorLabel.querySelector<HTMLSelectElement>('#destinationSelect');
+const pitchMarker = pitchVisual.querySelector<HTMLElement>('#pitchMarker');
+const pitchVisualValue = pitchVisual.querySelector<HTMLOutputElement>('#pitchVisualValue');
 
-if (!destinationSelect) {
-  throw new Error('Destination selector not found');
+if (!destinationSelect || !pitchMarker || !pitchVisualValue) {
+  throw new Error('Destination selector elements not found');
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function currentHeldVoltage(): number {
+  const text = slewedValue?.value || slewedValue?.textContent || '0';
+  const match = text.match(/-?\d+(\.\d+)?/);
+  const voltage = match ? Number(match[0]) : 0;
+  return clamp(Number.isFinite(voltage) ? voltage : 0, -5, 5);
+}
+
+function updatePitchVisual(): void {
+  const voltage = currentHeldVoltage();
+  const normalized = (voltage + 5) / 10;
+
+  pitchMarker.style.left = `${normalized * 100}%`;
+  pitchVisualValue.value = `Pitch CV ${voltage.toFixed(2)} V`;
+  pitchVisualValue.textContent = `Pitch CV ${voltage.toFixed(2)} V`;
+
+  requestAnimationFrame(updatePitchVisual);
 }
 
 function updateDestination(destination: VisualDestination): void {
@@ -90,6 +131,7 @@ function updateDestination(destination: VisualDestination): void {
   destinationDescription.textContent = copy.description;
   destinationStatus.value = copy.status;
   destinationStatus.textContent = copy.status;
+  pitchVisual.hidden = destination !== 'pitch';
 
   if (outputCableLabel) {
     outputCableLabel.textContent = copy.cable;
@@ -101,3 +143,4 @@ destinationSelect.addEventListener('change', () => {
 });
 
 updateDestination('scope');
+requestAnimationFrame(updatePitchVisual);
