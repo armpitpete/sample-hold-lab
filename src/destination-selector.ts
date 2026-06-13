@@ -18,8 +18,8 @@ const destinationCopy: Record<VisualDestination, DestinationCopy> = {
   },
   'filter-cutoff': {
     title: 'Filter cutoff',
-    description: 'Visual placeholder only. The held CV is not controlling a real filter yet.',
-    status: 'Filter placeholder',
+    description: 'Shows how the held CV would open or close a filter cutoff visually. No filter or audio is running.',
+    status: 'Filter cutoff visual demo',
     cable: 'CV to filter',
   },
   pitch: {
@@ -42,7 +42,7 @@ const outputCableLabel = document.querySelector<HTMLElement>('.output-cable span
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.0';
+  eyebrow.textContent = 'Software Prototype v2.1';
 }
 
 if (!destinationModule) {
@@ -64,7 +64,7 @@ selectorLabel.innerHTML = `
   <span>Destination</span>
   <select id="destinationSelect">
     <option value="scope" selected>Scope</option>
-    <option value="filter-cutoff">Filter cutoff placeholder</option>
+    <option value="filter-cutoff">Filter cutoff visual demo</option>
     <option value="pitch">Pitch visual demo</option>
     <option value="level">Level placeholder</option>
   </select>
@@ -91,15 +91,33 @@ pitchVisual.innerHTML = `
   <output id="pitchVisualValue">Pitch CV 0.00 V</output>
 `;
 
+const filterVisual = document.createElement('div');
+filterVisual.id = 'filterVisualDestination';
+filterVisual.className = 'filter-visual-destination';
+filterVisual.hidden = true;
+filterVisual.innerHTML = `
+  <div class="filter-visual-labels" aria-hidden="true">
+    <span>Closed</span>
+    <span>Open</span>
+  </div>
+  <div class="filter-window" aria-label="Filter cutoff visual response">
+    <div class="filter-band" id="filterBand"></div>
+  </div>
+  <output id="filterVisualValue">Cutoff CV 0.00 V</output>
+`;
+
 destinationModule.insertBefore(selectorLabel, triggerState);
 destinationModule.insertBefore(destinationStatus, triggerState);
 destinationModule.insertBefore(pitchVisual, triggerState);
+destinationModule.insertBefore(filterVisual, triggerState);
 
 const destinationSelect = selectorLabel.querySelector<HTMLSelectElement>('#destinationSelect');
 const pitchMarker = pitchVisual.querySelector<HTMLElement>('#pitchMarker');
 const pitchVisualValue = pitchVisual.querySelector<HTMLOutputElement>('#pitchVisualValue');
+const filterBand = filterVisual.querySelector<HTMLElement>('#filterBand');
+const filterVisualValue = filterVisual.querySelector<HTMLOutputElement>('#filterVisualValue');
 
-if (!destinationSelect || !pitchMarker || !pitchVisualValue) {
+if (!destinationSelect || !pitchMarker || !pitchVisualValue || !filterBand || !filterVisualValue) {
   throw new Error('Destination selector elements not found');
 }
 
@@ -114,15 +132,20 @@ function currentHeldVoltage(): number {
   return clamp(Number.isFinite(voltage) ? voltage : 0, -5, 5);
 }
 
-function updatePitchVisual(): void {
+function updateVisualDestinations(): void {
   const voltage = currentHeldVoltage();
   const normalized = (voltage + 5) / 10;
+  const cutoffPercent = 12 + normalized * 88;
 
   pitchMarker.style.left = `${normalized * 100}%`;
   pitchVisualValue.value = `Pitch CV ${voltage.toFixed(2)} V`;
   pitchVisualValue.textContent = `Pitch CV ${voltage.toFixed(2)} V`;
 
-  requestAnimationFrame(updatePitchVisual);
+  filterBand.style.width = `${cutoffPercent}%`;
+  filterVisualValue.value = `Cutoff CV ${voltage.toFixed(2)} V`;
+  filterVisualValue.textContent = `Cutoff CV ${voltage.toFixed(2)} V`;
+
+  requestAnimationFrame(updateVisualDestinations);
 }
 
 function updateDestination(destination: VisualDestination): void {
@@ -132,6 +155,7 @@ function updateDestination(destination: VisualDestination): void {
   destinationStatus.value = copy.status;
   destinationStatus.textContent = copy.status;
   pitchVisual.hidden = destination !== 'pitch';
+  filterVisual.hidden = destination !== 'filter-cutoff';
 
   if (outputCableLabel) {
     outputCableLabel.textContent = copy.cable;
@@ -143,4 +167,4 @@ destinationSelect.addEventListener('change', () => {
 });
 
 updateDestination('scope');
-requestAnimationFrame(updatePitchVisual);
+requestAnimationFrame(updateVisualDestinations);
