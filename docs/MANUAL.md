@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.3**.
+The current manual pass is **v3.4**.
 
 ## Current decision
 
@@ -83,6 +83,44 @@ These parts remain visual only:
 If the sound is annoying, too much, or not needed, press **Panic / Stop Audio**.
 
 The visual part of the app can still be used without audio.
+
+## Input source cheat sheet
+
+Use this section when you want to know what the Sample & Hold is sampling.
+
+Input sources are visual control voltage sources.
+
+They do not make sound by themselves.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+That means the chosen input source can affect pitch only after it has been sampled, tracked, held, and slewed into the main CV path.
+
+Filter cutoff, level, Super high, and Super low remain visual only.
+
+| Input source | What it does | What to watch on the Scope | If audio is running | Try it when... |
+|---|---|---|---|---|
+| LFO | Creates a smooth repeating voltage movement. | Watch the input move up and down in a regular shape. | Pitch changes in a more regular pattern after the voltage is sampled or tracked. | You want the clearest first source. |
+| Noise | Creates an irregular changing voltage. | Watch the input move less predictably. | Pitch changes less predictably after the voltage is sampled or tracked. | You want stepped random-style movement. |
+| Manual CV | Lets you choose the input voltage yourself. | Watch the input follow the manual value you set. | Pitch follows the held/slewed version of the manual value after it is captured or tracked. | You want slow, controlled testing. |
+
+### Input source boundary
+
+The input source is only the start of the patch.
+
+The source does not go straight to the oscillator.
+
+The current sound path is:
+
+```text
+input source -> S&H/T&H/Super S&H -> slew -> main held CV -> oscillator pitch
+```
+
+Only the final main held/slewed CV controls oscillator pitch.
 
 ## Mode cheat sheet
 
