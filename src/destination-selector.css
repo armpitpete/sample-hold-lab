@@ -1,0 +1,25 @@
+.destination-select-control {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.destination-select-control select {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: #020617;
+  color: #f8fafc;
+  font: inherit;
+  font-weight: 800;
+}
+
+.destination-status {
+  width: fit-content;
+  min-width: 120px;
+  margin-top: 12px;
+}
