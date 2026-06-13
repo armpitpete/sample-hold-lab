@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.2**.
+The current manual pass is **v3.3**.
 
 ## Current decision
 
@@ -116,6 +116,45 @@ In Super S&H, the companion outputs are visual only:
 They do not make separate notes.
 
 They do not control separate oscillators.
+
+## Destination cheat sheet
+
+Use this section when you want to know which destination to choose.
+
+The destination selector changes what the app shows.
+
+It does not mean every destination makes sound.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+| Destination | What it shows | Audio or visual? | What to watch | If audio is running | Try it when... |
+|---|---|---|---|---|---|
+| Scope | The input, held value, slewed output, timing, and companion paths. | Visual only. | Watch how the voltage changes over time. | The scope itself makes no sound, but the main held/slewed CV can still control pitch. | You want to understand the patch before thinking about sound. |
+| Pitch | How held CV can move pitch. | Audio-connected through the main held/slewed CV. | Watch pitch move with the held/slewed output. | The oscillator pitch follows the held/slewed main CV. | You want to hear the basic Sample & Hold pitch demo. |
+| Filter cutoff | How held CV could open or close a filter. | Visual only. | Watch the cutoff-style movement. | It does not make the oscillator brighter or darker. | You want to understand cutoff control before filter audio exists. |
+| Level | How held CV could change loudness. | Visual only. | Watch the level-style movement. | It does not make the oscillator louder or quieter. | You want to understand level control before VCA audio exists. |
+
+### Destination boundary
+
+Only **Pitch** is audio-connected.
+
+These remain visual only:
+
+- Scope traces
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+Filter cutoff is not a VCF yet.
+
+Level is not a VCA yet.
+
+Super high and Super low do not make separate notes.
 
 ## 1. What Sample Hold Lab is
 
