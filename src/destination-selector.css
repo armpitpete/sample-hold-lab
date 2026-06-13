@@ -23,3 +23,47 @@
   min-width: 120px;
   margin-top: 12px;
 }
+
+.pitch-visual-destination {
+  margin-top: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  padding: 12px;
+  background: #020617;
+}
+
+.pitch-visual-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #bfdbfe;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pitch-track {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.25), rgba(244, 114, 182, 0.5));
+}
+
+.pitch-marker {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 30px;
+  border: 3px solid #f8fafc;
+  border-radius: 999px;
+  background: #0f172a;
+  box-shadow: 0 0 0 4px rgba(244, 114, 182, 0.22);
+  transform: translate(-50%, -50%);
+}
+
+#pitchVisualValue {
+  width: fit-content;
+  min-width: 124px;
+  margin-top: 12px;
+}
