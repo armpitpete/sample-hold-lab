@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.5**.
+The current manual pass is **v3.6**.
 
 ## Current decision
 
@@ -720,6 +720,41 @@ The app shows main, Super high, and Super low outputs.
 Only the main output controls oscillator pitch.
 
 The Super high and Super low outputs are visual companions only.
+
+## Mini glossary
+
+Use this section when a word in the manual is unfamiliar.
+
+The glossary does not add new behaviour.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+Filter cutoff, level, Super high, and Super low remain visual only.
+
+| Term | Meaning in this app |
+|---|---|
+| control voltage / CV | A changing value used to control something else. In this app, it is shown on screen and can control oscillator pitch only through the main held/slewed CV path. |
+| input source | The starting voltage that S&H, T&H, or Super S&H uses. Current sources are LFO, Noise, and Manual CV. |
+| trigger | A short event that tells S&H to capture the current input value. |
+| gate | A longer on/off signal. In T&H, the output tracks while the gate is open and holds when it closes. |
+| sample | To look at the input voltage at one moment and capture that value. |
+| hold | To keep a captured value steady until the next capture or gate change. |
+| track | To follow the input voltage while the gate is open. |
+| slew | Smoothing between values instead of jumping instantly. |
+| jitter | Small timing variation. In this app, jitter moves timing slightly; it does not directly add random voltage. |
+| scope | The visual display that shows voltage behaviour over time. |
+| oscillator | A sound source. In this app, there is one quiet oscillator for the pitch demo. |
+| pitch | How high or low the oscillator sounds. This is the only audio-connected destination right now. |
+| filter cutoff | A visual destination showing how CV could open or close a filter. It is not audio-connected yet. |
+| level | A visual destination showing how CV could control loudness. It is not audio-connected yet. |
+| VCF | Voltage-controlled filter. There is no working audio VCF in the app yet. |
+| VCA | Voltage-controlled amplifier. There is no working audio VCA in the app yet. |
+| visual only | Shown on screen, but not changing the sound. |
+| audio-connected | Connected to something you can hear. Right now, only pitch is audio-connected. |
 
 ## Manual-as-we-go rule
 
