@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.8**.
+The current manual pass is **v3.9**.
 
 ## Current decision
 
@@ -15,6 +15,31 @@ Phase 4 stops at **v2.8**.
 Future work should move into the manual before more audio features.
 
 This guide explains the current app before the project adds more sound.
+
+## Manual stable point
+
+The v3 manual-first pass is stable enough for beginners.
+
+It now explains what the app shows, what the app can currently make audible, and what remains visual only.
+
+Future app changes should update this manual at the same time.
+
+More audio should not be added without updating the audio / visual boundary.
+
+The app is still not a full synth voice.
+
+The only audio path remains:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+These remain visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
 
 ## Current audio and visual boundary
 
