@@ -1,4 +1,5 @@
 import './destination-selector.css';
+import './filter-cutoff-visual.css';
 
 type VisualDestination = 'scope' | 'filter-cutoff' | 'pitch' | 'level';
 
