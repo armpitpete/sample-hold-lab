@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.4**.
+The current manual pass is **v3.5**.
 
 ## Current decision
 
@@ -193,6 +193,100 @@ Filter cutoff is not a VCF yet.
 Level is not a VCA yet.
 
 Super high and Super low do not make separate notes.
+
+## Common beginner confusions
+
+Use this section when something looks like it should change the sound, but it does not.
+
+The current app is a teaching lab first.
+
+It is not a full synth voice yet.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+### Why does Filter cutoff not change the sound?
+
+Filter cutoff is visual only right now.
+
+It shows how a held CV could open or close a filter.
+
+There is no filter audio yet.
+
+There is no VCF yet.
+
+So choosing **Filter cutoff** does not make the oscillator brighter or darker.
+
+### Why does Level not change the sound?
+
+Level is visual only right now.
+
+It shows how a held CV could control loudness.
+
+There is no level audio yet.
+
+There is no VCA yet.
+
+So choosing **Level** does not make the oscillator louder or quieter.
+
+### Why do Super high and Super low not make separate notes?
+
+Super high and Super low are companion outputs.
+
+They show related visual control paths.
+
+They do not make separate sounds yet.
+
+They do not control separate oscillators.
+
+Only the main held/slewed output controls oscillator pitch.
+
+### Why does Scope not make sound?
+
+Scope is a visual teaching view.
+
+It shows what the voltage is doing over time.
+
+It helps you see the input, held output, slew, timing, and companion paths.
+
+The Scope itself does not make sound.
+
+### Why is Start Audio optional?
+
+The app can teach the control-voltage behaviour without sound.
+
+Start Audio is optional because the main lesson is visible on the screen.
+
+Press **Start Audio** only when you want to hear the pitch demo.
+
+### Why is Panic / Stop Audio safe to use?
+
+Panic / Stop Audio stops and disconnects the oscillator.
+
+It is there so you can silence the app quickly.
+
+Using it does not break the visual patch.
+
+You can keep using the manual, scope, controls, and visual destinations after stopping audio.
+
+### What remains visual only?
+
+These parts still do not make or change sound:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+- Scope traces
+- timing markers
+- patch summary panel
+
+This is deliberate.
+
+More audio should not be added until the current behaviour is clearly explained.
 
 ## 1. What Sample Hold Lab is
 
