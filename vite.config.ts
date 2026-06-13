@@ -7,7 +7,7 @@ export default defineConfig({
       transformIndexHtml(html) {
         return html.replace(
           '</body>',
-          '    <script type="module" src="/src/destination-selector.ts"></script>\n    <script type="module" src="/src/patch-summary.ts"></script>\n  </body>',
+          '    <script type="module" src="/src/destination-selector.ts"></script>\n    <script type="module" src="/src/patch-summary.ts"></script>\n    <script type="module" src="/src/audio-safety.ts"></script>\n  </body>',
         );
       },
     },
