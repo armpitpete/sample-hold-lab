@@ -4,17 +4,43 @@ Sample Hold Lab is a small visual control-voltage learning app.
 
 It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, visual destination demos, and a frozen first audio demo through visible signal flow.
 
-Current prototype: **v2.8**.
+Current prototype: **v2.9**.
+
+Current stable audio boundary: **v2.8**.
 
 Current stable visual freeze: **v2.3**.
 
+## Current decision
+
+**Phase 4 stops at v2.8.**
+
+**v2.9 records the decision.**
+
+**Future work should move into the manual before more audio features.**
+
+The first audio demo is stable enough to stop here. Adding filter audio or level audio now would move the app toward a synth voice instead of a Sample & Hold teaching lab.
+
+The next implementation work should improve the beginner manual, not add more sound.
+
+## Manual
+
+The beginner manual starts here:
+
+```text
+docs/MANUAL.md
+```
+
+Manual-as-we-go rule:
+
+- update the manual as the app changes
+- explain what the user sees
+- explain what the user hears
+- explain what remains visual only
+- avoid adding more audio features before the current behaviour is explained clearly
+
 ## Current build
 
-**v2.8 freezes the first working audio demo boundary.**
-
-The first audio demo is now treated as stable enough to stop and document before any more sound features are added.
-
-There is one audio path:
+The current stable audio demo has one audio path:
 
 ```text
 held/slewed main CV -> oscillator pitch
@@ -34,17 +60,17 @@ This build does not add filter audio, level audio, VCF, VCA, effects, MIDI, pres
 
 ## Phase 4 plan
 
-Phase 4 adds sound only in small, safe steps.
+Phase 4 added sound only in small, safe steps.
 
 Safe order:
 
 1. Add audio safety controls first. Complete in v2.5.
 2. Add one oscillator only. Complete in v2.6.
 3. Map held CV to pitch only. Complete in v2.7.
-4. Check and freeze the first audio demo boundary. Current in v2.8.
-5. Stop before filter or level audio demos.
+4. Check and freeze the first audio demo boundary. Complete in v2.8.
+5. Stop Phase 4. Recorded in v2.9.
 
-Phase 4 should demonstrate held CV. It should not turn Sample Hold Lab into a full synth.
+Phase 4 stops here.
 
 ## What this project teaches
 
@@ -69,7 +95,7 @@ This project is:
 - a frozen first audio demo
 - a safe single-oscillator pitch demo
 - a small Vite + TypeScript browser app
-- a Phase 4 boundary freeze after the v2.7 held-CV-to-pitch build
+- a teaching-lab project that now needs a manual before more audio work
 
 ## What this project is not
 
@@ -224,7 +250,8 @@ These remain visual only:
 | v2.5 | Add audio safety controls only | Complete |
 | v2.6 | Add one simple oscillator only | Complete |
 | v2.7 | Map held CV to oscillator pitch only | Complete |
-| v2.8 | Audio demo behaviour check and boundary freeze | Current |
+| v2.8 | Audio demo behaviour check and boundary freeze | Frozen |
+| v2.9 | Decide whether Phase 4 stops here | Current |
 
 ## Run locally
 
@@ -254,30 +281,19 @@ npm run preview
 
 ## Local test checklist
 
-Before closing the v2.8 boundary freeze issue, check:
+Before closing the v2.9 decision issue, check:
 
 ```text
 1. npm install completes.
 2. npm run dev starts the Vite server.
 3. npm run build completes.
 4. App loads without console-breaking errors.
-5. Visible prototype label shows Software Prototype v2.8.
-6. Start Audio starts one quiet oscillator.
-7. Panic / Stop Audio silences it immediately.
-8. LFO can drive held-CV-to-pitch.
-9. Noise can drive held-CV-to-pitch.
-10. Manual CV can drive held-CV-to-pitch.
-11. S&H changes pitch on held values.
-12. T&H changes pitch while tracking and holds pitch while holding.
-13. Super S&H still keeps one main pitch path only.
-14. Oscillator pitch readout updates.
-15. Output level stays low and clamped.
-16. No autoplay.
-17. Audio starts only after user action.
-18. Filter cutoff remains visual only.
-19. Level remains visual only.
-20. Super high and Super low companion outputs remain visual only.
-21. No filter audio, level audio, MIDI, presets, save/load, free patch cables, modulation matrix, multiple oscillators, multiple audio destinations, or synth voice architecture has been added.
+5. Visible prototype label shows Software Prototype v2.9.
+6. The audio behaviour still matches v2.8.
+7. docs/MANUAL.md exists.
+8. README says Phase 4 stops at v2.8.
+9. README says future work moves into the manual before more audio features.
+10. No filter audio, level audio, MIDI, presets, save/load, free patch cables, modulation matrix, multiple oscillators, multiple audio destinations, or synth voice architecture has been added.
 ```
 
 ## Freeze rule
@@ -294,17 +310,15 @@ v2.7 maps held CV to oscillator pitch only.
 
 v2.8 freezes the first working audio demo boundary.
 
-Do not add filter audio or level audio directly on top of this boundary freeze.
+v2.9 records that Phase 4 stops at v2.8.
+
+Do not add filter audio or level audio before the manual explains the current app clearly.
 
 Future work should be opened as separate issues and should stay clearly scoped.
 
-Possible later Phase 4 issues:
+Next likely issue:
 
-- decide whether to stop Phase 4 here
-- plan next audio destination carefully before adding it
-- only then consider filter audio or level audio as separate issues
-
-These are later extensions, not part of the v2.8 boundary freeze.
+- v3.0 — Create first beginner manual pass
 
 ## Licence
 
