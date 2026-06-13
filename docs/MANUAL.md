@@ -4,7 +4,7 @@ Beginner guide for Sample Hold Lab.
 
 This manual describes the current prototype state: **v2.9**.
 
-The current manual pass is **v3.6**.
+The current manual pass is **v3.7**.
 
 ## Current decision
 
@@ -287,6 +287,175 @@ These parts still do not make or change sound:
 This is deliberate.
 
 More audio should not be added until the current behaviour is clearly explained.
+
+## First patch recipes
+
+Use these recipes before changing random controls.
+
+They are small starting points.
+
+Only pitch is connected to audio.
+
+The only audio path is still:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+Filter cutoff, level, Super high, and Super low remain visual only.
+
+### Recipe 1: LFO into S&H, visual only
+
+Use this when you want the clearest first visual patch.
+
+Settings:
+
+- **Input source:** LFO
+- **Mode:** S&H
+- **Destination:** Scope
+- **Audio:** off
+
+Do this:
+
+1. Watch the input trace move smoothly.
+2. Press **Manual trigger**.
+3. Watch the held value jump to a new level.
+4. Change **Slew amount**.
+5. Watch the slewed output move faster or slower toward the held value.
+
+Listen for:
+
+- nothing; this recipe is visual only
+
+Still visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+### Recipe 2: LFO into S&H, pitch audio demo
+
+Use this after Recipe 1 if you want to hear the held CV.
+
+Settings:
+
+- **Input source:** LFO
+- **Mode:** S&H
+- **Destination:** Pitch
+- **Audio:** Start Audio pressed
+
+Do this:
+
+1. Press **Start Audio**.
+2. Press **Manual trigger** a few times.
+3. Change **Slew amount**.
+4. Watch the held/slewed main CV move.
+5. Press **Panic / Stop Audio** when finished.
+
+Listen for:
+
+- the oscillator pitch changing in steps
+- smoother pitch movement when slew is higher
+
+Still visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+### Recipe 3: Noise into S&H, visual only
+
+Use this when you want less predictable held values.
+
+Settings:
+
+- **Input source:** Noise
+- **Mode:** S&H
+- **Destination:** Scope
+- **Audio:** off
+
+Do this:
+
+1. Watch the noisy input move irregularly.
+2. Press **Manual trigger**.
+3. Watch the held value jump to less predictable levels.
+4. Change **Slew amount**.
+5. Watch the slewed output smooth the jumps.
+
+Listen for:
+
+- nothing; this recipe is visual only
+
+Still visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+### Recipe 4: Manual CV into S&H, controlled test
+
+Use this when you want to choose the input value yourself.
+
+Settings:
+
+- **Input source:** Manual CV
+- **Mode:** S&H
+- **Destination:** Scope or Pitch
+- **Audio:** optional
+
+Do this:
+
+1. Move the manual CV control to a low value.
+2. Press **Manual trigger**.
+3. Move the manual CV control to a higher value.
+4. Press **Manual trigger** again.
+5. Change **Slew amount** and watch how the output moves between values.
+
+Listen for:
+
+- if audio is running, pitch follows the held/slewed version of the captured manual value
+- if audio is off, use the Scope only
+
+Still visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
+
+### Recipe 5: T&H comparison patch
+
+Use this when you want to compare tracking with holding.
+
+Settings:
+
+- **Input source:** LFO
+- **Mode:** T&H
+- **Destination:** Scope or Pitch
+- **Audio:** optional
+
+Do this:
+
+1. Watch the output follow while the gate is open.
+2. Watch the output freeze when the gate closes.
+3. Change the gate or clock rate if available.
+4. Change **Slew amount** and watch how movement changes.
+5. Press **Panic / Stop Audio** when finished if audio is running.
+
+Listen for:
+
+- if audio is running, pitch moves while tracking and holds when the gate closes
+- if audio is off, use the Scope only
+
+Still visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
 
 ## 1. What Sample Hold Lab is
 
