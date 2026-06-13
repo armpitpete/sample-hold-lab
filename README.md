@@ -2,19 +2,21 @@
 
 Sample Hold Lab is a small visual control-voltage learning app.
 
-It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, visual destination demos, and a silent audio-safety shell through visible signal flow.
+It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, visual destination demos, and one safe fixed oscillator through visible signal flow.
 
-Current prototype: **v2.5**.
+Current prototype: **v2.6**.
 
 Current stable visual freeze: **v2.3**.
 
 ## Current build
 
-**v2.5 adds audio safety controls only.**
+**v2.6 adds one simple oscillator only.**
 
-The app now has an Audio Demo / Safety panel with Start Audio and Panic / Stop Audio controls, visible status text, and a silent safe-output clamp value.
+The Audio Demo / Safety panel can now start one quiet fixed oscillator and stop it with Panic / Stop Audio.
 
-This build still makes no sound. It has no audio engine, no oscillator sound, no filter sound, no amplifier sound, no held-CV-to-pitch audio, no MIDI, no presets, and no save/load.
+The oscillator uses a fixed safe pitch and a very low clamped output level. It is not controlled by held CV yet.
+
+This build does not add filter audio, level audio, VCF, VCA, effects, MIDI, presets, save/load, free patch cables, a modulation matrix, multiple oscillators, multiple audio destinations, or a full synth voice.
 
 ## Phase 4 plan
 
@@ -22,9 +24,9 @@ Phase 4 should add sound only in small, safe steps.
 
 Safe order:
 
-1. Add audio safety controls first.
-2. Add one oscillator only.
-3. Map held CV to pitch only.
+1. Add audio safety controls first. Complete in v2.5.
+2. Add one oscillator only. Current in v2.6.
+3. Map held CV to pitch only. Later.
 4. Keep Scope and visual destinations working.
 5. Stop before filter or level audio demos.
 
@@ -37,7 +39,7 @@ The app shows how a changing voltage becomes a held or tracked control signal, t
 Core idea:
 
 ```text
-input voltage -> trigger/gate timing -> held/tracked output -> slew -> visual destination -> silent safety shell
+input voltage -> trigger/gate timing -> held/tracked output -> slew -> visual destination -> safe fixed oscillator demo
 ```
 
 It is designed to make the behaviour visible before using these ideas in hardware, VCV Rack, or a larger synth project.
@@ -50,15 +52,15 @@ This project is:
 - a teaching aid for Sample & Hold concepts
 - a limited patchable visual prototype
 - a visual destination demo layer
-- a silent audio-safety shell
+- a safe single-oscillator audio test
 - a small Vite + TypeScript browser app
-- a Phase 4 safety-control build after the v2.4 planning issue
+- a Phase 4 first-audio build after the v2.5 safety controls
 
 ## What this project is not
 
 This project is not:
 
-- an audio synth
+- a full audio synth
 - a VCO / VCF / VCA app
 - a real synth voice
 - a VCV Rack module
@@ -124,32 +126,37 @@ Scope shows the input, raw held value, slewed main output, and Super S&H compani
 
 Pitch shows how the held CV would move pitch visually.
 
-No oscillator or audio is running.
+The oscillator is not controlled by the Pitch visual demo yet.
 
 ### Filter cutoff visual demo
 
 Filter cutoff shows how the held CV would open or close a filter cutoff visually.
 
-No filter or audio is running.
+No filter or filter audio is running.
 
 ### Level visual demo
 
 Level shows how the held CV would change output level visually.
 
-No amplifier or audio is running.
+No amplifier or level audio is running.
 
 ## Audio Demo / Safety panel
 
-The safety panel is a visible shell for later audio work.
+The safety panel is the controlled audio area for Phase 4.
 
 It includes:
 
 - Start Audio button
 - Panic / Stop Audio button
-- status text: Audio off, Audio ready, or Audio stopped
+- status text: Audio off, Audio running, Audio stopped, or Audio unavailable
 - safe output clamp readout
+- fixed oscillator readout
 
-The panel does not make sound. The safe output level is clamped to silent.
+Pressing Start Audio starts one quiet sine oscillator at 220 Hz.
+
+Pressing Panic / Stop Audio stops and disconnects the oscillator.
+
+The oscillator is fixed-pitch only. Held CV does not control pitch yet.
 
 ## Controls
 
@@ -163,8 +170,8 @@ The panel does not make sound. The safe output level is clamped to silent.
 | Slew amount | Smooth output movement toward the raw target |
 | Timing jitter | Move automatic trigger/gate timing slightly before or after the regular clock reference |
 | Patch summary | Show the current visual patch choices |
-| Start Audio | Set the silent audio-safety shell to ready |
-| Panic / Stop Audio | Set the silent audio-safety shell to stopped |
+| Start Audio | Start one fixed quiet oscillator |
+| Panic / Stop Audio | Stop and disconnect the oscillator |
 
 ## Version summary
 
@@ -190,7 +197,8 @@ The panel does not make sound. The safe output level is clamped to silent.
 | v2.2 | Improved level-style visual destination | Complete |
 | v2.3 | Phase 3 stable freeze | Frozen |
 | v2.4 | Plan Phase 4 limited audio demo | Complete |
-| v2.5 | Add audio safety controls only | Current |
+| v2.5 | Add audio safety controls only | Complete |
+| v2.6 | Add one simple oscillator only | Current |
 
 ## Run locally
 
@@ -220,14 +228,14 @@ npm run preview
 
 ## Local test checklist
 
-Before closing the v2.5 safety issue, check:
+Before closing the v2.6 oscillator issue, check:
 
 ```text
 1. npm install completes.
 2. npm run dev starts the Vite server.
 3. npm run build completes.
 4. App loads without console-breaking errors.
-5. Visible prototype label shows Software Prototype v2.5.
+5. Visible prototype label shows Software Prototype v2.6.
 6. LFO still works.
 7. Noise still works.
 8. Manual CV still works.
@@ -240,12 +248,11 @@ Before closing the v2.5 safety issue, check:
 15. Level visual demo responds to held CV.
 16. Patch summary updates correctly.
 17. Audio Demo / Safety panel is visible.
-18. Start Audio changes status to Audio ready.
-19. Panic / Stop Audio changes status to Audio stopped.
-20. Safe output clamp remains silent.
-21. No browser audio API has been added.
-22. No oscillator code has been added.
-23. No sound, filter audio, level audio, MIDI, presets, save/load, or synth behaviour has been added.
+18. Start Audio produces one quiet fixed oscillator tone.
+19. Panic / Stop Audio silences the oscillator immediately.
+20. Safe output clamp stays low.
+21. Held CV does not control pitch yet.
+22. No filter audio, level audio, MIDI, presets, save/load, free patch cables, modulation matrix, multiple oscillators, multiple audio destinations, or synth voice architecture has been added.
 ```
 
 ## Freeze rule
@@ -256,18 +263,19 @@ v2.4 plans Phase 4 boundaries.
 
 v2.5 adds the safety controls only.
 
-Do not add sound directly on top of the v2.5 safety issue.
+v2.6 adds one fixed quiet oscillator only.
+
+Do not add held-CV-to-pitch directly on top of unrelated edits.
 
 Future work should be opened as separate issues and should stay clearly scoped.
 
 Possible later Phase 4 issues:
 
-- add one simple oscillator only
 - map held CV to pitch only
 - test visual destinations alongside audio demo
 - stop before filter or level audio demos
 
-These are later extensions, not part of the v2.5 safety-control issue.
+These are later extensions, not part of the v2.6 one-oscillator issue.
 
 ## Licence
 
