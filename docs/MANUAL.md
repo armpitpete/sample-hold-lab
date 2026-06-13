@@ -1,16 +1,20 @@
 # Sample Hold Lab Manual
 
-This is the plain beginner manual for Sample Hold Lab.
+Beginner guide for Sample Hold Lab.
 
-It should be updated as the app changes.
+This manual describes the current prototype state: **v2.9**.
+
+The current manual pass is **v3.0**.
 
 ## Current decision
 
-Phase 4 stops at v2.8.
+Phase 4 stops at **v2.8**.
 
-v2.9 records the decision.
+**v2.9** records the stop decision.
 
 Future work should move into the manual before more audio features.
+
+That means this guide explains the current app before the project adds more sound.
 
 ## Current stable audio boundary
 
@@ -20,86 +24,387 @@ There is one audio path:
 held/slewed main CV -> oscillator pitch
 ```
 
-That means the main held control voltage changes the pitch of one quiet oscillator.
+That means the main held control voltage can change the pitch of one quiet oscillator.
 
-## What remains visual only
+Nothing else is connected to audio yet.
 
-These parts do not make or change sound yet:
+## Read this first
 
-- filter cutoff
-- level
+Sample Hold Lab is mainly a visual learning app.
+
+It shows control voltage behaviour on screen.
+
+Only one small part currently makes sound.
+
+Use this simple rule:
+
+```text
+visual = shown on screen only
+audio = changes the sound you hear
+```
+
+At the moment:
+
+- the main held/slewed CV can change oscillator pitch
+- filter cutoff is visual only
+- level is visual only
+- Super high is visual only
+- Super low is visual only
+
+## 1. What Sample Hold Lab is
+
+Sample Hold Lab is a small learning app for control voltage.
+
+It shows what happens when a changing voltage is:
+
+1. sampled
+2. held
+3. tracked
+4. slewed
+5. shown on a scope
+6. sent to simple visual destinations
+7. used to control one safe oscillator pitch demo
+
+The app is not a full synth.
+
+It is not trying to be VCV Rack.
+
+It is not trying to be a VCO / VCF / VCA voice.
+
+The purpose is narrower:
+
+> Help a beginner see what Sample & Hold, Track & Hold, slew, jitter, and related held outputs do.
+
+## 2. What a control voltage is
+
+A control voltage is a signal that controls another part of a synth.
+
+It is not usually the sound itself.
+
+It is more like a moving instruction.
+
+Examples:
+
+- low voltage can mean low pitch
+- high voltage can mean high pitch
+- low voltage can mean closed filter
+- high voltage can mean open filter
+- low voltage can mean quiet level
+- high voltage can mean louder level
+
+In this app, the control voltage is shown between:
+
+```text
+-5 V and +5 V
+```
+
+The app lets you see the voltage moving before expecting you to hear everything as a full synth patch.
+
+## 3. What Sample & Hold does
+
+Sample & Hold means:
+
+```text
+look at the input -> capture the value -> hold that value
+```
+
+The input voltage keeps moving.
+
+The held output does not keep moving all the time.
+
+It changes only when a trigger happens.
+
+A trigger is a short event that tells the Sample & Hold to capture a new value.
+
+In Sample Hold Lab, triggers can come from:
+
+- the automatic clock
+- the manual trigger button
+
+### What you should see
+
+In S&H mode:
+
+- the input trace keeps moving
+- a trigger happens
+- the current input value is captured
+- the raw held value jumps to that captured value
+- the held output stays there until the next trigger
+
+### What you may hear
+
+If audio is running, the oscillator pitch follows the held/slewed main CV.
+
+That can sound like stepped pitch changes.
+
+This is still only the single pitch audio demo.
+
+## 4. What Track & Hold does
+
+Track & Hold means:
+
+```text
+follow while gate is open -> hold when gate closes
+```
+
+A gate is different from a trigger.
+
+A trigger is a short capture event.
+
+A gate stays open for a length of time.
+
+In T&H mode, the output follows the input while the gate is open.
+
+When the gate closes, the output holds the last value.
+
+### What you should see
+
+In T&H mode:
+
+- the gate opens
+- the output tracks the input
+- the gate closes
+- the output freezes at the last tracked value
+- the output waits there until the next gate opens
+
+### What you may hear
+
+If audio is running, pitch can move while the gate is open.
+
+When the gate closes, the pitch holds.
+
+Again, only pitch is connected to audio.
+
+## 5. What Super S&H shows
+
+Super S&H is a visual expansion of Sample & Hold.
+
+It shows one main held path and two related companion paths.
+
+The three visible paths are:
+
+- main held/slewed output
 - Super high companion output
 - Super low companion output
 
-## What Sample Hold Lab is
+These outputs are related.
 
-Sample Hold Lab is a small learning app for control voltage behaviour.
+They are shown together so you can see that one sampled value can create more than one related control path.
 
-It shows what happens when a changing voltage is sampled, held, tracked, slewed, and sent to a destination.
+### Important audio limit
 
-The app is not a full synth voice.
+Only the main held/slewed output controls oscillator pitch.
 
-## What a control voltage is
+These remain visual only:
 
-A control voltage is a signal that controls something else.
+- Super high companion output
+- Super low companion output
 
-In this app, the voltage is shown visually as a value between -5 V and +5 V.
+Do not expect Super high or Super low to make separate sounds yet.
 
-A voltage can control pitch, filter cutoff, level, or another destination. At the moment, only pitch has an audio connection.
+Do not expect them to control separate oscillators yet.
 
-## What Sample & Hold does
+## 6. What the Scope shows
 
-Sample & Hold captures the input voltage at one moment.
+The Scope is the main teaching view.
 
-It then holds that value until the next trigger.
+It shows the control voltage behaviour over time.
 
-In the audio demo, this can sound like stepped pitch changes.
+Depending on the selected mode, it can show:
 
-## What Track & Hold does
+- input voltage
+- trigger or gate timing
+- raw held value
+- slewed main output
+- Super high companion output
+- Super low companion output
 
-Track & Hold follows the input while the gate is open.
+### Input voltage
 
-When the gate closes, it holds the last value.
+This is the voltage being sampled or tracked.
 
-In the audio demo, this means pitch can move while tracking, then stay fixed while holding.
+It may come from:
 
-## What Super S&H shows
+- LFO
+- Noise
+- Manual CV
 
-Super S&H shows one main held path and two related companion paths.
+### Raw held value
 
-Only the main held path controls oscillator pitch.
+This is the value captured by S&H, or the value held after T&H stops tracking.
 
-The Super high and Super low companion outputs remain visual only.
+It can jump sharply.
 
-## What the Scope shows
+### Slewed main output
 
-The Scope shows the input voltage, raw held value, slewed main output, and Super S&H companion outputs.
+Slew smooths movement toward the raw held value.
 
-It is the main teaching view.
+Low slew means faster movement.
 
-## What the visual destinations mean
+High slew means slower movement.
 
-The Pitch, Filter cutoff, and Level destinations show what a held CV could control.
+This slewed main output is the current audio pitch source.
 
-Only pitch is connected to audio.
+### Timing markers
 
-Filter cutoff and level remain visual demonstrations.
+Timing markers help you see when captures or gates happen.
 
-## What the audio demo does
+Jitter can move the timing slightly so it looks less perfectly mechanical.
 
-The audio demo starts one quiet oscillator.
+Jitter changes timing only.
 
-The oscillator pitch follows the held/slewed main CV.
+It does not directly add random voltage.
 
-The output is kept low and clamped for safety.
+## 7. What the visual destinations mean
 
-Audio starts only after pressing Start Audio.
+The destination selector shows what the held CV is being used to demonstrate.
+
+The current destinations are:
+
+- Scope
+- Pitch
+- Filter cutoff
+- Level
+
+A destination can be visual only or audio-connected.
+
+At the moment, only pitch has an audio connection.
+
+### Scope
+
+Scope shows the voltage traces.
+
+It is visual only.
+
+It helps you understand the behaviour before thinking about sound.
+
+### Pitch
+
+Pitch shows how held CV can control pitch.
+
+Pitch is also connected to the audio demo.
+
+When audio is running, the same held/slewed main CV changes the oscillator pitch.
+
+Current audio path:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+### Filter cutoff
+
+Filter cutoff shows how held CV could open or close a filter.
+
+This is visual only.
+
+There is no filter audio yet.
+
+There is no VCF yet.
+
+Changing the filter cutoff destination does not make the oscillator brighter or darker.
+
+### Level
+
+Level shows how held CV could control loudness.
+
+This is visual only.
+
+There is no level audio yet.
+
+There is no VCA yet.
+
+Changing the level destination does not make the oscillator louder or quieter.
+
+## 8. What the audio demo does
+
+The audio demo is a small safe sound test.
+
+It is there to help you hear one control-voltage idea.
+
+It does not turn the app into a full synth.
+
+### What Start Audio does
+
+Start Audio starts one quiet oscillator.
+
+The oscillator does not start automatically.
+
+You must press Start Audio first.
+
+This keeps the app safer and less surprising.
+
+### What controls the sound
+
+Only this path controls sound:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+That means:
+
+- LFO can be sampled or tracked, then affect pitch
+- Noise can be sampled or tracked, then affect pitch
+- Manual CV can be sampled or tracked, then affect pitch
+- S&H can create stepped pitch changes
+- T&H can create tracking-then-holding pitch behaviour
+- Super S&H still uses only the main output for pitch
+
+### What Panic / Stop Audio does
 
 Panic / Stop Audio stops and disconnects the oscillator.
 
-## What not to expect yet
+Use it when:
 
-Do not expect:
+- you want silence immediately
+- the sound is annoying
+- the browser audio state feels stuck
+- you want to reset the audio demo safely
+
+The app should still be usable visually after Panic / Stop Audio.
+
+### Safety limits
+
+The audio demo is intentionally limited.
+
+It uses:
+
+- one oscillator
+- low output level
+- clamped output
+- no autoplay
+- user-started audio only
+
+## 9. What remains visual only
+
+These parts do not make or change sound yet:
+
+- Scope traces
+- filter cutoff destination
+- level destination
+- Super high companion output
+- Super low companion output
+- timing markers
+- patch summary panel
+
+### Visual-only does not mean broken
+
+Visual-only means the app is teaching the idea on screen first.
+
+For example:
+
+- Filter cutoff shows what cutoff control would look like.
+- Level shows what level control would look like.
+- Super high and Super low show related control paths.
+
+They are not audio destinations yet.
+
+This is deliberate.
+
+## 10. What not to expect yet
+
+Do not expect these features in the current app:
 
 - filter audio
 - level audio
@@ -110,12 +415,85 @@ Do not expect:
 - presets
 - save/load
 - patch cables
+- modulation matrix
 - multiple oscillators
 - multiple audio destinations
 - full synth voice behaviour
+- VCV Rack behaviour
+- hardware simulation
+
+The current app is a teaching lab with one safe audio pitch demo.
+
+## Control summary
+
+| Control | What it does | Audio or visual? |
+|---|---|---|
+| Input source | Chooses LFO, Noise, or Manual CV | Visual source; can feed pitch through held CV |
+| Mode | Chooses S&H, T&H, or Super S&H | Visual behaviour; main output can feed pitch |
+| Destination | Chooses Scope, Pitch, Filter cutoff, or Level | Pitch has audio; others are visual only |
+| Manual trigger | Captures a value immediately in S&H mode | Can cause pitch change if audio is running |
+| Clock / gate rate | Changes automatic trigger or gate speed | Can change pitch timing if audio is running |
+| Slew amount | Smooths movement toward the raw held value | Affects pitch glide if audio is running |
+| Jitter | Moves event timing slightly | Timing only |
+| Start Audio | Starts one quiet oscillator | Audio |
+| Panic / Stop Audio | Stops and disconnects the oscillator | Audio safety |
+
+## Plain behaviour examples
+
+### Example 1: LFO into S&H
+
+The LFO moves smoothly.
+
+S&H samples it at trigger moments.
+
+The held value changes in steps.
+
+If audio is running, the oscillator pitch changes in steps.
+
+### Example 2: Noise into S&H
+
+Noise moves irregularly.
+
+S&H captures irregular values.
+
+The held output jumps less predictably.
+
+If audio is running, pitch changes less predictably.
+
+### Example 3: Manual CV into S&H
+
+Manual CV lets you choose the input voltage yourself.
+
+S&H captures the value when triggered.
+
+If audio is running, the oscillator pitch follows the held/slewed version of that captured value.
+
+### Example 4: T&H mode
+
+The output follows while the gate is open.
+
+The output holds when the gate closes.
+
+If audio is running, pitch follows while tracking and stays fixed while holding.
+
+### Example 5: Super S&H mode
+
+The app shows main, Super high, and Super low outputs.
+
+Only the main output controls oscillator pitch.
+
+The Super high and Super low outputs are visual companions only.
 
 ## Manual-as-we-go rule
 
 Before adding more audio features, improve this manual.
 
-Each future feature should explain what changed, what the user sees, what the user hears, and what remains visual only.
+Each future feature should explain:
+
+- what changed
+- what the user sees
+- what the user hears
+- what remains visual only
+- what is still not included
+
+This keeps the project understandable before it becomes larger.
