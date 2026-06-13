@@ -30,6 +30,8 @@ const DEFAULT_CLOCK_RATE_HZ = 1;
 const DEFAULT_SLEW_AMOUNT = 0.35;
 const DEFAULT_JITTER_AMOUNT = 0.1;
 const SUPER_SPREAD_VOLTS = 0.9;
+const NOISE_UPDATE_INTERVAL_MS = 90;
+const NOISE_SMOOTHING_AMOUNT = 0.18;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -46,7 +48,7 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v1.0</p>
+      <p class="eyebrow">Software Prototype v1.1</p>
       <h1>Sample Hold Lab</h1>
       <p class="intro">A fixed visual patch showing what Super S&amp;H adds compared with normal Sample &amp; Hold: several related held control paths from one trigger.</p>
     </header>
@@ -61,7 +63,7 @@ app.innerHTML = `
           <span>Input source</span>
           <select id="inputSourceSelect">
             <option value="lfo" selected>LFO</option>
-            <option value="noise-placeholder">Noise placeholder</option>
+            <option value="noise-placeholder">Noise</option>
             <option value="manual-cv-placeholder">Manual CV placeholder</option>
           </select>
         </label>
@@ -202,6 +204,9 @@ if (!ctx) {
 
 let mode: Mode = 'sample-hold';
 let inputSource: InputSource = 'lfo';
+let visualNoiseVoltage = 0;
+let noiseTargetVoltage = 0;
+let nextNoiseTargetTime = 0;
 let rawMainVoltage = 0;
 let rawHighVoltage = 0;
 let rawLowVoltage = 0;
@@ -251,6 +256,7 @@ inputSourceSelect.addEventListener('change', () => {
   lastEventTime = 0;
   gateOpenState = false;
   clockScheduleNeedsReset = true;
+  resetNoiseSource();
   updateInputSourceText();
 });
 
@@ -267,13 +273,37 @@ modeInputs.forEach((input) => {
 });
 
 function calculateInputVoltage(timeMs: number): number {
-  if (inputSource !== 'lfo') {
-    return 0;
+  if (inputSource === 'lfo') {
+    return calculateLfoInputVoltage(timeMs);
   }
 
+  if (inputSource === 'noise-placeholder') {
+    return calculateNoiseInputVoltage(timeMs);
+  }
+
+  return 0;
+}
+
+function calculateLfoInputVoltage(timeMs: number): number {
   const slowWave = Math.sin(timeMs / 850);
   const gentleMovement = Math.sin(timeMs / 2300) * 0.28;
   return clamp(slowWave * 3.6 + gentleMovement, -5, 5);
+}
+
+function calculateNoiseInputVoltage(timeMs: number): number {
+  if (nextNoiseTargetTime === 0 || timeMs >= nextNoiseTargetTime) {
+    noiseTargetVoltage = Math.random() * 10 - 5;
+    nextNoiseTargetTime = timeMs + NOISE_UPDATE_INTERVAL_MS;
+  }
+
+  visualNoiseVoltage += (noiseTargetVoltage - visualNoiseVoltage) * NOISE_SMOOTHING_AMOUNT;
+  return clamp(visualNoiseVoltage, -5, 5);
+}
+
+function resetNoiseSource(): void {
+  visualNoiseVoltage = 0;
+  noiseTargetVoltage = 0;
+  nextNoiseTargetTime = 0;
 }
 
 function updateInputSourceText(): void {
@@ -287,9 +317,9 @@ function updateInputSourceText(): void {
 
   if (inputSource === 'noise-placeholder') {
     inputSourceTitle.textContent = 'Noise';
-    inputSourceDescription.textContent = 'Placeholder only. Real noise source comes in v1.1.';
-    inputSourceStatus.value = 'Placeholder';
-    inputLegendLabel.textContent = 'Input placeholder';
+    inputSourceDescription.textContent = 'Creates an irregular changing visual voltage.';
+    inputSourceStatus.value = 'Noise active';
+    inputLegendLabel.textContent = 'Input noise';
     return;
   }
 
