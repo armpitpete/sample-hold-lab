@@ -824,6 +824,7 @@ function animate(timeMs: number): void {
   inputValue.value = formatVoltage(currentInput);
   rawValue.value = `Raw ${formatVoltage(rawMainVoltage)}`;
   slewedValue.value = `Slewed ${formatVoltage(slewedMainVoltage)}`;
+  slewedValue.dataset.voltage = slewedMainVoltage.toFixed(4);
   superValue.value = mode === 'super-sample-hold'
     ? `Super +${formatVoltage(rawHighVoltage)} / ${formatVoltage(rawLowVoltage)}`
     : 'Super off';
@@ -858,4 +859,5 @@ manualCvValue.value = formatVoltage(manualCvVoltage);
 clockRateValue.value = formatClockRate(clockRateHz);
 slewAmountValue.value = formatSlewAmount(slewAmount);
 jitterAmountValue.value = formatJitterAmount(jitterAmount);
+slewedValue.dataset.voltage = slewedMainVoltage.toFixed(4);
 requestAnimationFrame(animate);
