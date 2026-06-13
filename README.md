@@ -2,19 +2,19 @@
 
 Sample Hold Lab is a small visual control-voltage learning app.
 
-It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, and visual destination demos through visible signal flow.
+It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, visual destination demos, and a silent audio-safety shell through visible signal flow.
 
-Current planning prototype: **v2.4**.
+Current prototype: **v2.5**.
 
 Current stable visual freeze: **v2.3**.
 
-## Current plan
+## Current build
 
-**v2.4 plans Phase 4.**
+**v2.5 adds audio safety controls only.**
 
-Phase 4 may add a limited audio demo later, but this v2.4 issue adds no audio.
+The app now has an Audio Demo / Safety panel with Start Audio and Panic / Stop Audio controls, visible status text, and a silent safe-output clamp value.
 
-The app still behaves like the v2.3 visual-only freeze. There is still no audio engine, no oscillator sound, no filter sound, no amplifier sound, no Start Audio button, and no Panic button.
+This build still makes no sound. It has no audio engine, no oscillator sound, no filter sound, no amplifier sound, no held-CV-to-pitch audio, no MIDI, no presets, and no save/load.
 
 ## Phase 4 plan
 
@@ -37,7 +37,7 @@ The app shows how a changing voltage becomes a held or tracked control signal, t
 Core idea:
 
 ```text
-input voltage -> trigger/gate timing -> held/tracked output -> slew -> visual destination
+input voltage -> trigger/gate timing -> held/tracked output -> slew -> visual destination -> silent safety shell
 ```
 
 It is designed to make the behaviour visible before using these ideas in hardware, VCV Rack, or a larger synth project.
@@ -50,8 +50,9 @@ This project is:
 - a teaching aid for Sample & Hold concepts
 - a limited patchable visual prototype
 - a visual destination demo layer
+- a silent audio-safety shell
 - a small Vite + TypeScript browser app
-- a Phase 4 planning build after the v2.3 visual freeze
+- a Phase 4 safety-control build after the v2.4 planning issue
 
 ## What this project is not
 
@@ -137,6 +138,19 @@ Level shows how the held CV would change output level visually.
 
 No amplifier or audio is running.
 
+## Audio Demo / Safety panel
+
+The safety panel is a visible shell for later audio work.
+
+It includes:
+
+- Start Audio button
+- Panic / Stop Audio button
+- status text: Audio off, Audio ready, or Audio stopped
+- safe output clamp readout
+
+The panel does not make sound. The safe output level is clamped to silent.
+
 ## Controls
 
 | Control | Purpose |
@@ -149,6 +163,8 @@ No amplifier or audio is running.
 | Slew amount | Smooth output movement toward the raw target |
 | Timing jitter | Move automatic trigger/gate timing slightly before or after the regular clock reference |
 | Patch summary | Show the current visual patch choices |
+| Start Audio | Set the silent audio-safety shell to ready |
+| Panic / Stop Audio | Set the silent audio-safety shell to stopped |
 
 ## Version summary
 
@@ -173,7 +189,8 @@ No amplifier or audio is running.
 | v2.1 | Improved filter-cutoff-style visual destination | Complete |
 | v2.2 | Improved level-style visual destination | Complete |
 | v2.3 | Phase 3 stable freeze | Frozen |
-| v2.4 | Plan Phase 4 limited audio demo | Current |
+| v2.4 | Plan Phase 4 limited audio demo | Complete |
+| v2.5 | Add audio safety controls only | Current |
 
 ## Run locally
 
@@ -203,14 +220,14 @@ npm run preview
 
 ## Local test checklist
 
-Before closing the v2.4 planning issue, check:
+Before closing the v2.5 safety issue, check:
 
 ```text
 1. npm install completes.
 2. npm run dev starts the Vite server.
 3. npm run build completes.
 4. App loads without console-breaking errors.
-5. Visible prototype label shows Software Prototype v2.4.
+5. Visible prototype label shows Software Prototype v2.5.
 6. LFO still works.
 7. Noise still works.
 8. Manual CV still works.
@@ -222,32 +239,35 @@ Before closing the v2.4 planning issue, check:
 14. Filter cutoff visual demo responds to held CV.
 15. Level visual demo responds to held CV.
 16. Patch summary updates correctly.
-17. No AudioContext has been added.
-18. No oscillator code has been added.
-19. No Start Audio button has been added.
-20. No Panic button has been added.
-21. No sound, filter audio, level audio, MIDI, presets, save/load, or new UI behaviour has been added.
+17. Audio Demo / Safety panel is visible.
+18. Start Audio changes status to Audio ready.
+19. Panic / Stop Audio changes status to Audio stopped.
+20. Safe output clamp remains silent.
+21. No browser audio API has been added.
+22. No oscillator code has been added.
+23. No sound, filter audio, level audio, MIDI, presets, save/load, or synth behaviour has been added.
 ```
 
 ## Freeze rule
 
 v2.3 freezes Phase 3 as a stable visual destination demo layer.
 
-v2.4 only plans Phase 4 boundaries.
+v2.4 plans Phase 4 boundaries.
 
-Do not add audio directly on top of the v2.4 planning issue.
+v2.5 adds the safety controls only.
+
+Do not add sound directly on top of the v2.5 safety issue.
 
 Future work should be opened as separate issues and should stay clearly scoped.
 
 Possible later Phase 4 issues:
 
-- add audio safety controls only
 - add one simple oscillator only
 - map held CV to pitch only
 - test visual destinations alongside audio demo
 - stop before filter or level audio demos
 
-These are later extensions, not part of the v2.4 planning issue.
+These are later extensions, not part of the v2.5 safety-control issue.
 
 ## Licence
 
