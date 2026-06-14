@@ -28,6 +28,14 @@ Make the interface denser and use more horizontal space.
 
 Use smaller writing, tighter cards, and a wider shell.
 
+The desktop patch row should show these modules in one row:
+
+```text
+LFO / Voltage source -> Sample / Track / Super Hold -> Scope / Destination -> Trigger / Gate / Slew / Jitter
+```
+
+On smaller screens, the page can still stack vertically.
+
 ## Boundary
 
 No audio behaviour changes.
@@ -55,6 +63,7 @@ held/slewed main CV -> oscillator pitch
 - reduced module padding
 - reduced minimum card heights
 - reduced forced processor/trigger height
+- moved Trigger / Gate / Slew / Jitter into the same desktop row as the other patch modules
 - reduced button/output padding
 - reduced scope panel spacing
 - reduced rule-card emphasis
