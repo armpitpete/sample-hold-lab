@@ -259,3 +259,605 @@ jitterAmountInput.addEventListener('input', () => {
   jitterAmountValue.value = formatJitterAmount(jitterAmount);
   clockScheduleNeedsReset = true;
 });
+
+manualCvInput.addEventListener('input', () => {
+  manualCvVoltage = Number(manualCvInput.value);
+  manualCvValue.value = formatVoltage(manualCvVoltage);
+});
+
+inputSourceSelect.addEventListener('change', () => {
+  inputSource = inputSourceSelect.value as InputSource;
+  history.length = 0;
+  lastEventSource = null;
+  lastEventTime = 0;
+  gateOpenState = false;
+  clockScheduleNeedsReset = true;
+  resetNoiseSource();
+  updateInputSourceText();
+  updateManualCvControl();
+});
+
+modeInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    mode = input.value as Mode;
+    history.length = 0;
+    lastEventSource = null;
+    lastEventTime = 0;
+    gateOpenState = false;
+    clockScheduleNeedsReset = true;
+    updateModeText();
+  });
+});
+
+function calculateInputVoltage(timeMs: number): number {
+  if (inputSource === 'lfo') {
+    return calculateLfoInputVoltage(timeMs);
+  }
+
+  if (inputSource === 'noise-placeholder') {
+    return calculateNoiseInputVoltage(timeMs);
+  }
+
+  return manualCvVoltage;
+}
+
+function calculateLfoInputVoltage(timeMs: number): number {
+  const slowWave = Math.sin(timeMs / 850);
+  const gentleMovement = Math.sin(timeMs / 2300) * 0.28;
+  return clamp(slowWave * 3.6 + gentleMovement, -5, 5);
+}
+
+function calculateNoiseInputVoltage(timeMs: number): number {
+  if (nextNoiseTargetTime === 0 || timeMs >= nextNoiseTargetTime) {
+    noiseTargetVoltage = Math.random() * 10 - 5;
+    nextNoiseTargetTime = timeMs + NOISE_UPDATE_INTERVAL_MS;
+  }
+
+  visualNoiseVoltage += (noiseTargetVoltage - visualNoiseVoltage) * NOISE_SMOOTHING_AMOUNT;
+  return clamp(visualNoiseVoltage, -5, 5);
+}
+
+function resetNoiseSource(): void {
+  visualNoiseVoltage = 0;
+  noiseTargetVoltage = 0;
+  nextNoiseTargetTime = 0;
+}
+
+function updateInputSourceText(): void {
+  if (inputSource === 'lfo') {
+    inputSourceTitle.textContent = 'LFO';
+    inputSourceDescription.textContent = 'Creates a continuously changing voltage.';
+    inputSourceStatus.value = 'LFO active';
+    inputLegendLabel.textContent = 'Input LFO';
+    return;
+  }
+
+  if (inputSource === 'noise-placeholder') {
+    inputSourceTitle.textContent = 'Noise';
+    inputSourceDescription.textContent = 'Creates an irregular changing visual voltage.';
+    inputSourceStatus.value = 'Noise active';
+    inputLegendLabel.textContent = 'Input noise';
+    return;
+  }
+
+  inputSourceTitle.textContent = 'Manual CV';
+  inputSourceDescription.textContent = 'Creates a user-controlled visual voltage.';
+  inputSourceStatus.value = 'Manual CV active';
+  inputLegendLabel.textContent = 'Input manual CV';
+}
+
+function updateManualCvControl(): void {
+  manualCvControl.hidden = inputSource !== 'manual-cv-placeholder';
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function plotWidth(width: number): number {
+  return width - PLOT.left - PLOT.right;
+}
+
+function plotHeight(height: number): number {
+  return height - PLOT.top - PLOT.bottom;
+}
+
+function voltageToY(value: number, height: number): number {
+  const normalized = (value + 5) / 10;
+  return PLOT.top + plotHeight(height) - normalized * plotHeight(height);
+}
+
+function indexToX(index: number, width: number): number {
+  return PLOT.left + (plotWidth(width) / (POINT_COUNT - 1)) * index;
+}
+
+function clockIntervalMs(): number {
+  return 1000 / clockRateHz;
+}
+
+function randomJitterOffset(intervalMs: number): number {
+  if (jitterAmount <= 0) {
+    return 0;
+  }
+
+  return (Math.random() * 2 - 1) * intervalMs * jitterAmount;
+}
+
+function resetClockSchedule(timeMs: number): void {
+  const interval = clockIntervalMs();
+  nextIdealMarkTime = timeMs + interval;
+  nextIdealEventTime = nextIdealMarkTime;
+  nextJitteredEventTime = nextIdealEventTime + randomJitterOffset(interval);
+  clockScheduleNeedsReset = false;
+  clockPulseVisibleUntil = 0;
+}
+
+function ensureClockSchedule(timeMs: number): void {
+  if (clockScheduleNeedsReset || nextIdealMarkTime === 0 || nextJitteredEventTime === 0) {
+    resetClockSchedule(timeMs);
+  }
+}
+
+function takeRegularClockMark(timeMs: number): boolean {
+  let marked = false;
+  const interval = clockIntervalMs();
+
+  while (timeMs >= nextIdealMarkTime) {
+    marked = true;
+    nextIdealMarkTime += interval;
+  }
+
+  return marked;
+}
+
+function takeJitteredClockEvent(timeMs: number): boolean {
+  if (timeMs < nextJitteredEventTime) {
+    return false;
+  }
+
+  const interval = clockIntervalMs();
+  nextIdealEventTime += interval;
+  nextJitteredEventTime = nextIdealEventTime + randomJitterOffset(interval);
+  clockPulseVisibleUntil = timeMs + 260;
+  return true;
+}
+
+function updateModeText(): void {
+  if (mode === 'sample-hold') {
+    modeDescription.textContent = 'S&H captures one raw target. Slew smooths the output toward it.';
+    scopeDescription.textContent = 'S&H mode: one held/slewed output from each trigger.';
+    return;
+  }
+
+  if (mode === 'track-hold') {
+    modeDescription.textContent = 'T&H follows while gate is open, then holds when gate closes.';
+    scopeDescription.textContent = 'T&H mode: output follows during gate-open areas and holds during gate-closed areas.';
+    return;
+  }
+
+  modeDescription.textContent = 'Super S&H captures one main target and two related companion targets from the same trigger.';
+  scopeDescription.textContent = 'Super S&H mode: one trigger creates three related held/slewed visual outputs.';
+}
+
+function drawGrid(width: number, height: number): void {
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, width, height);
+
+  const voltages = [5, 2.5, 0, -2.5, -5];
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 12; i += 1) {
+    const x = PLOT.left + (plotWidth(width) / 12) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, PLOT.top);
+    ctx.lineTo(x, height - PLOT.bottom);
+    ctx.stroke();
+  }
+
+  voltages.forEach((voltage) => {
+    const y = voltageToY(voltage, height);
+    const isZero = voltage === 0;
+
+    ctx.strokeStyle = isZero ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = isZero ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(PLOT.left, y);
+    ctx.lineTo(width - PLOT.right, y);
+    ctx.stroke();
+
+    ctx.fillStyle = isZero ? '#e5e7eb' : '#94a3b8';
+    ctx.font = isZero ? '700 13px Inter, sans-serif' : '600 12px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${voltage > 0 ? '+' : ''}${voltage} V`, PLOT.left - 10, y);
+  });
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 12px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('time →', PLOT.left + plotWidth(width) / 2, height - 10);
+}
+
+function drawRegularClockMarks(points: SamplePoint[], width: number, height: number): void {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.42)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 7]);
+
+  points.forEach((point, index) => {
+    if (!point.regularClock) {
+      return;
+    }
+
+    const x = indexToX(index, width);
+    ctx.beginPath();
+    ctx.moveTo(x, PLOT.top);
+    ctx.lineTo(x, height - PLOT.bottom);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+function drawGateBands(points: SamplePoint[], width: number, height: number): void {
+  if (mode !== 'track-hold') {
+    return;
+  }
+
+  ctx.fillStyle = 'rgba(34, 197, 94, 0.12)';
+
+  points.forEach((point, index) => {
+    if (!point.gateOpen) {
+      return;
+    }
+
+    const x = indexToX(index, width);
+    const nextX = indexToX(Math.min(index + 1, POINT_COUNT - 1), width);
+    ctx.fillRect(x, PLOT.top, Math.max(2, nextX - x), height - PLOT.top - PLOT.bottom);
+  });
+}
+
+function drawLine(points: number[], width: number, height: number, strokeStyle: string, lineWidth = 3, dashed = false): void {
+  if (points.length < 2) {
+    return;
+  }
+
+  ctx.save();
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.setLineDash(dashed ? [9, 7] : []);
+  ctx.beginPath();
+
+  points.forEach((value, index) => {
+    const x = indexToX(index, width);
+    const y = voltageToY(value, height);
+
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawOutputTrace(points: SamplePoint[], width: number, height: number): void {
+  if (points.length < 2) {
+    return;
+  }
+
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.20)';
+  ctx.lineWidth = 11;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+
+  points.forEach((point, index) => {
+    const x = indexToX(index, width);
+    const y = voltageToY(point.slewedMain, height);
+
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+
+  ctx.stroke();
+}
+
+function drawEvents(points: SamplePoint[], width: number, height: number): void {
+  const eventPoints = points
+    .map((point, index) => ({ point, index }))
+    .filter(({ point }) => point.event !== null);
+
+  eventPoints.forEach(({ point, index }, eventNumber) => {
+    const isLatest = eventNumber === eventPoints.length - 1;
+    const x = indexToX(index, width);
+    const eventStyle = getEventStyle(point.event);
+
+    ctx.strokeStyle = isLatest ? eventStyle.strong : eventStyle.soft;
+    ctx.lineWidth = isLatest ? 4 : 2;
+    ctx.beginPath();
+    ctx.moveTo(x, PLOT.top);
+    ctx.lineTo(x, height - PLOT.bottom);
+    ctx.stroke();
+
+    if (isLatest) {
+      ctx.fillStyle = eventStyle.strong;
+      ctx.beginPath();
+      ctx.moveTo(x, PLOT.top + 2);
+      ctx.lineTo(x - 8, PLOT.top + 18);
+      ctx.lineTo(x + 8, PLOT.top + 18);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = '800 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(eventStyle.label, x, PLOT.top + 24);
+    }
+  });
+}
+
+function getEventStyle(event: EventSource): { strong: string; soft: string; label: string } {
+  switch (event) {
+    case 'manual':
+      return { strong: '#fb923c', soft: 'rgba(251, 146, 60, 0.35)', label: 'manual trigger' };
+    case 'clock':
+      return { strong: '#facc15', soft: 'rgba(250, 204, 21, 0.35)', label: 'jittered trigger' };
+    case 'gate-open':
+      return { strong: '#22c55e', soft: 'rgba(34, 197, 94, 0.35)', label: 'jittered gate open' };
+    case 'gate-close':
+      return { strong: '#60a5fa', soft: 'rgba(96, 165, 250, 0.35)', label: 'jittered gate close' };
+    default:
+      return { strong: '#facc15', soft: 'rgba(250, 204, 21, 0.35)', label: 'event' };
+  }
+}
+
+function drawCurrentMarkers(points: SamplePoint[], width: number, height: number): void {
+  const latest = points[points.length - 1];
+
+  if (!latest) {
+    return;
+  }
+
+  const x = width - PLOT.right;
+  const inputY = voltageToY(latest.input, height);
+  const rawY = voltageToY(latest.rawMain, height);
+  const slewedY = voltageToY(latest.slewedMain, height);
+
+  drawMarker(x, inputY, '#67e8f9');
+  drawMarker(x, rawY, '#a78bfa');
+  drawMarker(x, slewedY, '#f472b6');
+
+  ctx.font = '800 12px Inter, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = '#67e8f9';
+  ctx.fillText('input now', x - 8, inputY - 8);
+
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillText('raw main', x - 8, rawY);
+
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#f472b6';
+  ctx.fillText('slewed main', x - 8, slewedY + 8);
+
+  if (mode === 'super-sample-hold') {
+    const highY = voltageToY(latest.slewedHigh, height);
+    const lowY = voltageToY(latest.slewedLow, height);
+    drawMarker(x, highY, '#22c55e');
+    drawMarker(x, lowY, '#60a5fa');
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('super high', x - 8, highY - 8);
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillText('super low', x - 8, lowY + 8);
+  }
+}
+
+function drawMarker(x: number, y: number, fillStyle: string): void {
+  ctx.fillStyle = fillStyle;
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#111827';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+function formatVoltage(value: number): string {
+  return `${value.toFixed(2)} V`;
+}
+
+function formatClockRate(value: number): string {
+  return `${value.toFixed(2)} Hz`;
+}
+
+function formatSlewAmount(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatJitterAmount(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function slewCoefficient(deltaMs: number): number {
+  if (slewAmount <= 0) {
+    return 1;
+  }
+
+  const timeConstantMs = 25 + slewAmount * 1450;
+  return 1 - Math.exp(-deltaMs / timeConstantMs);
+}
+
+function chooseSampleHoldEvent(timeMs: number): EventSource {
+  if (manualTriggerQueued) {
+    manualTriggerQueued = false;
+    return 'manual';
+  }
+
+  if (takeJitteredClockEvent(timeMs)) {
+    return 'clock';
+  }
+
+  return null;
+}
+
+function calculateTrackHoldEvent(timeMs: number): EventSource {
+  if (manualTriggerQueued) {
+    manualTriggerQueued = false;
+  }
+
+  if (takeJitteredClockEvent(timeMs)) {
+    gateOpenState = !gateOpenState;
+    return gateOpenState ? 'gate-open' : 'gate-close';
+  }
+
+  return null;
+}
+
+function captureMainTarget(currentInput: number): void {
+  rawMainVoltage = currentInput;
+
+  if (mode === 'super-sample-hold') {
+    rawHighVoltage = clamp(currentInput + SUPER_SPREAD_VOLTS, -5, 5);
+    rawLowVoltage = clamp(currentInput - SUPER_SPREAD_VOLTS, -5, 5);
+  } else {
+    rawHighVoltage = rawMainVoltage;
+    rawLowVoltage = rawMainVoltage;
+  }
+}
+
+function updateRawOutput(currentInput: number, timeMs: number): EventSource {
+  if (mode === 'track-hold') {
+    const eventSource = calculateTrackHoldEvent(timeMs);
+
+    if (gateOpenState) {
+      captureMainTarget(currentInput);
+    }
+
+    if (eventSource) {
+      lastEventTime = timeMs;
+      lastEventSource = eventSource;
+    }
+
+    return eventSource;
+  }
+
+  const eventSource = chooseSampleHoldEvent(timeMs);
+
+  if (eventSource) {
+    captureMainTarget(currentInput);
+    lastEventTime = timeMs;
+    lastEventSource = eventSource;
+  }
+
+  return eventSource;
+}
+
+function updateSlewedOutput(deltaMs: number): void {
+  const coefficient = slewCoefficient(deltaMs);
+  slewedMainVoltage += (rawMainVoltage - slewedMainVoltage) * coefficient;
+  slewedHighVoltage += (rawHighVoltage - slewedHighVoltage) * coefficient;
+  slewedLowVoltage += (rawLowVoltage - slewedLowVoltage) * coefficient;
+}
+
+function animate(timeMs: number): void {
+  ensureClockSchedule(timeMs);
+
+  const currentInput = calculateInputVoltage(timeMs);
+  const regularClock = takeRegularClockMark(timeMs);
+  const deltaMs = lastFrameTime === 0 ? 16.7 : Math.min(50, timeMs - lastFrameTime);
+  lastFrameTime = timeMs;
+
+  const eventSource = updateRawOutput(currentInput, timeMs);
+  updateSlewedOutput(deltaMs);
+
+  history.push({
+    input: currentInput,
+    rawMain: rawMainVoltage,
+    slewedMain: slewedMainVoltage,
+    rawHigh: rawHighVoltage,
+    slewedHigh: slewedHighVoltage,
+    rawLow: rawLowVoltage,
+    slewedLow: slewedLowVoltage,
+    event: eventSource,
+    regularClock,
+    gateOpen: mode === 'track-hold' && gateOpenState,
+  });
+
+  while (history.length > HISTORY_LENGTH) {
+    history.shift();
+  }
+
+  const visiblePoints = history.slice(-POINT_COUNT);
+  const width = canvas.width;
+  const height = canvas.height;
+
+  drawGrid(width, height);
+  drawRegularClockMarks(visiblePoints, width, height);
+  drawGateBands(visiblePoints, width, height);
+  drawOutputTrace(visiblePoints, width, height);
+  drawEvents(visiblePoints, width, height);
+  drawLine(visiblePoints.map((point) => point.input), width, height, '#67e8f9', 3);
+  drawLine(visiblePoints.map((point) => point.rawMain), width, height, '#a78bfa', 3, true);
+  drawLine(visiblePoints.map((point) => point.slewedMain), width, height, '#f472b6', 4);
+
+  if (mode === 'super-sample-hold') {
+    drawLine(visiblePoints.map((point) => point.slewedHigh), width, height, '#22c55e', 3);
+    drawLine(visiblePoints.map((point) => point.slewedLow), width, height, '#60a5fa', 3);
+  }
+
+  drawCurrentMarkers(visiblePoints, width, height);
+
+  inputValue.value = formatVoltage(currentInput);
+  rawValue.value = `Raw ${formatVoltage(rawMainVoltage)}`;
+  slewedValue.value = `Slewed ${formatVoltage(slewedMainVoltage)}`;
+  slewedValue.dataset.voltage = slewedMainVoltage.toFixed(4);
+  superValue.value = mode === 'super-sample-hold'
+    ? `Super +${formatVoltage(rawHighVoltage)} / ${formatVoltage(rawLowVoltage)}`
+    : 'Super off';
+  clockRateValue.value = formatClockRate(clockRateHz);
+  slewAmountValue.value = formatSlewAmount(slewAmount);
+  jitterAmountValue.value = formatJitterAmount(jitterAmount);
+
+  const eventAge = timeMs - lastEventTime;
+  const recentlyChanged = eventAge < 450;
+
+  if (mode === 'track-hold') {
+    triggerState.value = gateOpenState ? 'Tracking target' : 'Holding target';
+    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered gate edge' : 'Jitter drives gate';
+    gateState.value = gateOpenState ? 'Gate open' : 'Gate closed';
+  } else {
+    const modeLabel = mode === 'super-sample-hold' ? 'Super' : 'S&H';
+    triggerState.value = recentlyChanged ? `${modeLabel} ${lastEventSource === 'manual' ? 'manual' : 'jittered'} trigger` : 'Waiting';
+    clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered clock pulse' : 'Jittered clock waiting';
+    gateState.value = 'Gate inactive';
+  }
+
+  triggerState.classList.toggle('is-triggered', mode === 'track-hold' ? gateOpenState : recentlyChanged);
+  clockPulseState.classList.toggle('is-triggered', timeMs < clockPulseVisibleUntil);
+  gateState.classList.toggle('is-triggered', mode === 'track-hold' && gateOpenState);
+
+  requestAnimationFrame(animate);
+}
+
+updateInputSourceText();
+updateManualCvControl();
+manualCvValue.value = formatVoltage(manualCvVoltage);
+clockRateValue.value = formatClockRate(clockRateHz);
+slewAmountValue.value = formatSlewAmount(slewAmount);
+jitterAmountValue.value = formatJitterAmount(jitterAmount);
+slewedValue.dataset.voltage = slewedMainVoltage.toFixed(4);
+requestAnimationFrame(animate);
