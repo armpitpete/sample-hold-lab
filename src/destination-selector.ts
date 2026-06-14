@@ -15,25 +15,25 @@ const destinationCopy: Record<VisualDestination, DestinationCopy> = {
   scope: {
     title: 'Scope',
     description: 'Shows normal output and Super S&H companion outputs.',
-    status: 'Scope selected',
+    status: 'Scope selected · visual only',
     cable: 'Related CV',
   },
   'filter-cutoff': {
     title: 'Filter cutoff',
-    description: 'Shows how the held CV would open or close a filter cutoff visually. No filter or audio is running.',
-    status: 'Filter cutoff visual demo',
+    description: 'Shows how the held CV would open or close a filter cutoff visually. No filter audio or VCF is running.',
+    status: 'Filter cutoff visual only',
     cable: 'CV to filter',
   },
   pitch: {
     title: 'Pitch',
-    description: 'Shows how the held CV would move pitch visually. No oscillator or audio is running.',
-    status: 'Pitch visual demo',
+    description: 'Audio-connected destination. The one quiet oscillator follows the held/slewed main CV when Start Audio is running.',
+    status: 'Pitch audio-connected · main CV controls oscillator pitch',
     cable: 'CV to pitch',
   },
   level: {
     title: 'Level',
-    description: 'Shows how the held CV would change level visually. No amplifier or audio is running.',
-    status: 'Level visual demo',
+    description: 'Shows how the held CV would change level visually. No level audio or VCA is running.',
+    status: 'Level visual only',
     cable: 'CV to level',
   },
 };
@@ -44,7 +44,7 @@ const outputCableLabel = document.querySelector<HTMLElement>('.output-cable span
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.6';
+  eyebrow.textContent = 'Software Prototype v5.2';
 }
 
 if (!destinationModule) {
@@ -66,9 +66,9 @@ selectorLabel.innerHTML = `
   <span>Destination</span>
   <select id="destinationSelect">
     <option value="scope" selected>Scope</option>
-    <option value="filter-cutoff">Filter cutoff visual demo</option>
-    <option value="pitch">Pitch visual demo</option>
-    <option value="level">Level visual demo</option>
+    <option value="filter-cutoff">Filter cutoff visual only</option>
+    <option value="pitch">Pitch audio-connected</option>
+    <option value="level">Level visual only</option>
   </select>
 `;
 
@@ -83,6 +83,7 @@ pitchVisual.id = 'pitchVisualDestination';
 pitchVisual.className = 'pitch-visual-destination';
 pitchVisual.hidden = true;
 pitchVisual.innerHTML = `
+  <div class="pitch-connected-badge">Audio-connected destination</div>
   <div class="pitch-visual-labels" aria-hidden="true">
     <span>Low</span>
     <span>High</span>
@@ -159,8 +160,8 @@ function updateVisualDestinations(): void {
   const levelPercent = normalized * 100;
 
   pitchMarker.style.left = `${normalized * 100}%`;
-  pitchVisualValue.value = `Pitch CV ${voltage.toFixed(2)} V`;
-  pitchVisualValue.textContent = `Pitch CV ${voltage.toFixed(2)} V`;
+  pitchVisualValue.value = `Pitch audio CV ${voltage.toFixed(2)} V`;
+  pitchVisualValue.textContent = `Pitch audio CV ${voltage.toFixed(2)} V`;
 
   filterBand.style.width = `${cutoffPercent}%`;
   filterVisualValue.value = `Cutoff CV ${voltage.toFixed(2)} V`;
@@ -179,6 +180,7 @@ function updateDestination(destination: VisualDestination): void {
   destinationDescription.textContent = copy.description;
   destinationStatus.value = copy.status;
   destinationStatus.textContent = copy.status;
+  destinationStatus.classList.toggle('is-audio-connected', destination === 'pitch');
   pitchVisual.hidden = destination !== 'pitch';
   filterVisual.hidden = destination !== 'filter-cutoff';
   levelVisual.hidden = destination !== 'level';
