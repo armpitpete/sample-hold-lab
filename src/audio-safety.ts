@@ -5,6 +5,6 @@
 //   src/audio-safety-controls.ts
 //
 // This file is intentionally kept as a no-op so any older script import does
-// not recreate the duplicate v2.9 Audio Demo / Safety panel.
+// not recreate a duplicate audio safety panel.
 
 export {};
