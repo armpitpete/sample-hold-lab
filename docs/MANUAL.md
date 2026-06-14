@@ -2,13 +2,13 @@
 
 Beginner guide for Sample Hold Lab.
 
-This manual describes the current app state: **v4.5**.
+This manual describes the current app state: **v5.0**.
 
-The current manual pass is **v4.6**.
+The current manual pass is **v5.0**.
 
 ## Current status
 
-The app and manual now match the same boundary:
+The app and manual match this boundary:
 
 ```text
 held/slewed main CV -> oscillator pitch
@@ -17,6 +17,8 @@ held/slewed main CV -> oscillator pitch
 That means the existing held/slewed main control voltage can change the pitch of one quiet oscillator.
 
 This is the only audio path.
+
+In v5.0, the pitch demo status text is clearer. While audio is running, it shows the current main CV voltage and the oscillator pitch in Hz.
 
 These remain visual only:
 
@@ -70,6 +72,7 @@ At the moment:
 - Start Audio starts one quiet oscillator
 - Panic / Stop Audio stops and disconnects the oscillator safely
 - Slew amount can smooth pitch movement
+- the audio status shows main CV voltage and pitch in Hz while audio is running
 - filter cutoff is visual only
 - level is visual only
 - Super high is visual only
@@ -93,7 +96,8 @@ Audio is optional.
 8. Notice that low slew moves quickly and high slew glides more slowly.
 9. Optional: press **Start Audio**.
 10. Listen to the oscillator pitch follow the held/slewed main CV.
-11. Press **Panic / Stop Audio** when finished.
+11. Watch the audio status show the main CV voltage and pitch in Hz.
+12. Press **Panic / Stop Audio** when finished.
 
 During this quick start, only pitch is connected to audio.
 
@@ -155,7 +159,7 @@ It does not mean every destination makes sound.
 | Destination | What it shows | Audio or visual? | What to watch | If audio is running | Try it when... |
 |---|---|---|---|---|---|
 | Scope | The input, held value, slewed output, timing, and companion paths. | Visual only. | Watch how the voltage changes over time. | The scope itself makes no sound, but the main held/slewed CV can still control pitch. | You want to understand the patch before thinking about sound. |
-| Pitch | How held CV can move pitch. | Audio-connected through the main held/slewed CV. | Watch pitch move with the held/slewed output. | The oscillator pitch follows the held/slewed main CV. | You want to hear the basic Sample & Hold pitch demo. |
+| Pitch | How held CV can move pitch. | Audio-connected through the main held/slewed CV. | Watch pitch move with the held/slewed output and audio status. | The oscillator pitch follows the held/slewed main CV. | You want to hear the basic Sample & Hold pitch demo. |
 | Filter cutoff | How held CV could open or close a filter. | Visual only. | Watch the cutoff-style movement. | It does not make the oscillator brighter or darker. | You want to understand cutoff control before filter audio exists. |
 | Level | How held CV could change loudness. | Visual only. | Watch the level-style movement. | It does not make the oscillator louder or quieter. | You want to understand level control before VCA audio exists. |
 
@@ -239,7 +243,8 @@ Do this:
 3. Change **Slew amount**.
 4. Watch the held/slewed main CV move.
 5. Listen for the oscillator pitch following that held/slewed main CV.
-6. Press **Panic / Stop Audio** when finished.
+6. Watch the audio status show the main CV voltage and pitch in Hz.
+7. Press **Panic / Stop Audio** when finished.
 
 Listen for:
 
@@ -616,6 +621,8 @@ The oscillator does not start automatically.
 
 While audio is running, the oscillator pitch follows the held/slewed main CV.
 
+The audio status shows the current main CV voltage and the resulting oscillator pitch in Hz.
+
 Changing Slew amount can make the pitch movement sharper or smoother.
 
 Panic / Stop Audio stops and disconnects the oscillator.
@@ -662,7 +669,7 @@ The current app is a teaching lab with one safe audio pitch demo.
 | Clock / gate rate | Changes automatic trigger or gate speed | Can change pitch timing if audio is running |
 | Slew amount | Smooths movement toward the raw held value | Affects pitch glide if audio is running |
 | Jitter | Moves event timing slightly | Timing only |
-| Start Audio | Starts one quiet oscillator | Audio |
+| Start Audio | Starts one quiet oscillator and shows main CV / Hz status | Audio |
 | Panic / Stop Audio | Stops and disconnects the oscillator | Audio safety |
 
 ## Plain behaviour examples
