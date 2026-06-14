@@ -2,37 +2,21 @@
 
 Beginner guide for Sample Hold Lab.
 
-This manual describes the current prototype state: **v2.9**.
+This manual describes the current app state: **v4.5**.
 
-The current manual pass is **v3.9**.
+The current manual pass is **v4.6**.
 
-## Current decision
+## Current status
 
-Phase 4 stops at **v2.8**.
-
-**v2.9** records the stop decision.
-
-Future work should move into the manual before more audio features.
-
-This guide explains the current app before the project adds more sound.
-
-## Manual stable point
-
-The v3 manual-first pass is stable enough for beginners.
-
-It now explains what the app shows, what the app can currently make audible, and what remains visual only.
-
-Future app changes should update this manual at the same time.
-
-More audio should not be added without updating the audio / visual boundary.
-
-The app is still not a full synth voice.
-
-The only audio path remains:
+The app and manual now match the same boundary:
 
 ```text
 held/slewed main CV -> oscillator pitch
 ```
+
+That means the existing held/slewed main control voltage can change the pitch of one quiet oscillator.
+
+This is the only audio path.
 
 These remain visual only:
 
@@ -41,13 +25,27 @@ These remain visual only:
 - Super high companion output
 - Super low companion output
 
+The app is still not a full synth voice.
+
+## Automatic manual-update rule
+
+From v4.6 onward, the manual must be updated automatically as part of every user-facing app change.
+
+Use this rule:
+
+- if app behaviour changes, update this manual in the same pass
+- if audio behaviour changes, update the audio / visual boundary wording
+- if a control becomes functional, update the quick reference, recipes, and glossary where needed
+- do not ask separately whether to update the manual
+- only skip the manual for purely internal changes that do not affect what the user sees, hears, or does
+
 ## Current audio and visual boundary
 
 Sample Hold Lab is mainly a visual learning app.
 
 It shows control voltage behaviour on screen.
 
-Only one small part currently makes sound.
+One small part currently makes sound.
 
 The only audio path is:
 
@@ -69,6 +67,9 @@ audio = changes the sound you hear
 At the moment:
 
 - the main held/slewed CV can change oscillator pitch
+- Start Audio starts one quiet oscillator
+- Panic / Stop Audio stops and disconnects the oscillator safely
+- Slew amount can smooth pitch movement
 - filter cutoff is visual only
 - level is visual only
 - Super high is visual only
@@ -237,7 +238,8 @@ Do this:
 2. Press **Manual trigger** a few times.
 3. Change **Slew amount**.
 4. Watch the held/slewed main CV move.
-5. Press **Panic / Stop Audio** when finished.
+5. Listen for the oscillator pitch following that held/slewed main CV.
+6. Press **Panic / Stop Audio** when finished.
 
 Listen for:
 
@@ -429,7 +431,7 @@ These parts still do not make or change sound:
 
 This is deliberate.
 
-More audio should not be added until the current behaviour is clearly explained.
+More audio should not be added unless the manual is updated in the same pass.
 
 ## Main guide
 
@@ -612,6 +614,10 @@ Start Audio starts one quiet oscillator.
 
 The oscillator does not start automatically.
 
+While audio is running, the oscillator pitch follows the held/slewed main CV.
+
+Changing Slew amount can make the pitch movement sharper or smoother.
+
 Panic / Stop Audio stops and disconnects the oscillator.
 
 Use it when:
@@ -742,7 +748,9 @@ Filter cutoff, level, Super high, and Super low remain visual only.
 
 ## Manual-as-we-go rule
 
-Before adding more audio features, improve this manual.
+Do not let the app and manual drift apart again.
+
+Every future user-facing app change should update this manual in the same pass.
 
 Each future feature should explain:
 
