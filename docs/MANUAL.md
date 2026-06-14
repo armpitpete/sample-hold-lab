@@ -2,9 +2,9 @@
 
 Beginner guide for Sample Hold Lab.
 
-This manual describes the current app state: **v5.0**.
+This manual describes the current app state: **v5.2**.
 
-The current manual pass is **v5.0**.
+The current manual pass is **v5.2**.
 
 ## Current status
 
@@ -18,7 +18,7 @@ That means the existing held/slewed main control voltage can change the pitch of
 
 This is the only audio path.
 
-In v5.0, the pitch demo status text is clearer. While audio is running, it shows the current main CV voltage and the oscillator pitch in Hz.
+In v5.2, the Pitch destination is clearly marked as the only audio-connected destination.
 
 These remain visual only:
 
@@ -31,7 +31,7 @@ The app is still not a full synth voice.
 
 ## Automatic manual-update rule
 
-From v4.6 onward, the manual must be updated automatically as part of every user-facing app change.
+The manual must be updated automatically as part of every user-facing app change.
 
 Use this rule:
 
@@ -55,10 +55,6 @@ The only audio path is:
 held/slewed main CV -> oscillator pitch
 ```
 
-That means the main held/slewed control voltage can change the pitch of one quiet oscillator.
-
-Everything else is visual until stated otherwise.
-
 Use this simple rule:
 
 ```text
@@ -73,6 +69,8 @@ At the moment:
 - Panic / Stop Audio stops and disconnects the oscillator safely
 - Slew amount can smooth pitch movement
 - the audio status shows main CV voltage and pitch in Hz while audio is running
+- Pitch is the only audio-connected destination
+- Scope is visual only
 - filter cutoff is visual only
 - level is visual only
 - Super high is visual only
@@ -82,10 +80,6 @@ At the moment:
 
 Use this path the first time you open the app.
 
-It keeps the patch simple.
-
-Audio is optional.
-
 1. Set **Input source** to **LFO**.
 2. Set **Mode** to **S&H**.
 3. Set **Destination** to **Scope**.
@@ -94,12 +88,13 @@ Audio is optional.
 6. Notice that the held value changes when the trigger happens.
 7. Change **Slew amount**.
 8. Notice that low slew moves quickly and high slew glides more slowly.
-9. Optional: press **Start Audio**.
-10. Listen to the oscillator pitch follow the held/slewed main CV.
-11. Watch the audio status show the main CV voltage and pitch in Hz.
-12. Press **Panic / Stop Audio** when finished.
+9. Optional: set **Destination** to **Pitch**.
+10. Optional: press **Start Audio**.
+11. Listen to the oscillator pitch follow the held/slewed main CV.
+12. Watch the audio status show the main CV voltage and pitch in Hz.
+13. Press **Panic / Stop Audio** when finished.
 
-During this quick start, only pitch is connected to audio.
+During this quick start, only Pitch is connected to audio.
 
 The visual part of the app can still be used without audio.
 
@@ -109,9 +104,7 @@ The visual part of the app can still be used without audio.
 
 The input source is what the app samples or tracks.
 
-Input sources are control voltage sources.
-
-They do not make sound by themselves.
+Input sources are control voltage sources. They do not make sound by themselves.
 
 | Input source | What it does | What to watch on the Scope | If audio is running | Try it when... |
 |---|---|---|---|---|
@@ -159,9 +152,9 @@ It does not mean every destination makes sound.
 | Destination | What it shows | Audio or visual? | What to watch | If audio is running | Try it when... |
 |---|---|---|---|---|---|
 | Scope | The input, held value, slewed output, timing, and companion paths. | Visual only. | Watch how the voltage changes over time. | The scope itself makes no sound, but the main held/slewed CV can still control pitch. | You want to understand the patch before thinking about sound. |
-| Pitch | How held CV can move pitch. | Audio-connected through the main held/slewed CV. | Watch pitch move with the held/slewed output and audio status. | The oscillator pitch follows the held/slewed main CV. | You want to hear the basic Sample & Hold pitch demo. |
-| Filter cutoff | How held CV could open or close a filter. | Visual only. | Watch the cutoff-style movement. | It does not make the oscillator brighter or darker. | You want to understand cutoff control before filter audio exists. |
-| Level | How held CV could change loudness. | Visual only. | Watch the level-style movement. | It does not make the oscillator louder or quieter. | You want to understand level control before VCA audio exists. |
+| Pitch | Shows pitch movement and marks the destination as audio-connected. | Audio-connected through the main held/slewed CV. | Watch the Pitch badge, Pitch CV value, and audio status. | The oscillator pitch follows the held/slewed main CV. | You want to hear the basic Sample & Hold pitch demo. |
+| Filter cutoff | Shows how held CV could open or close a filter. | Visual only. | Watch the cutoff-style movement. | It does not make the oscillator brighter or darker. | You want to understand cutoff control before filter audio exists. |
+| Level | Shows how held CV could change loudness. | Visual only. | Watch the level-style movement. | It does not make the oscillator louder or quieter. | You want to understand level control before VCA audio exists. |
 
 Only **Pitch** is audio-connected.
 
@@ -183,9 +176,7 @@ Super high and Super low do not make separate notes.
 
 Use these recipes before changing random controls.
 
-They are small starting points.
-
-Only pitch is connected to audio.
+Only Pitch is connected to audio.
 
 The only audio path is still:
 
@@ -196,8 +187,6 @@ held/slewed main CV -> oscillator pitch
 Filter cutoff, level, Super high, and Super low remain visual only.
 
 ### Recipe 1: LFO into S&H, visual only
-
-Use this when you want the clearest first visual patch.
 
 Settings:
 
@@ -218,16 +207,7 @@ Listen for:
 
 - nothing; this recipe is visual only
 
-Still visual only:
-
-- filter cutoff
-- level
-- Super high companion output
-- Super low companion output
-
 ### Recipe 2: LFO into S&H, pitch audio demo
-
-Use this after Recipe 1 if you want to hear the held CV.
 
 Settings:
 
@@ -238,13 +218,15 @@ Settings:
 
 Do this:
 
-1. Press **Start Audio**.
-2. Press **Manual trigger** a few times.
-3. Change **Slew amount**.
-4. Watch the held/slewed main CV move.
-5. Listen for the oscillator pitch following that held/slewed main CV.
-6. Watch the audio status show the main CV voltage and pitch in Hz.
-7. Press **Panic / Stop Audio** when finished.
+1. Select **Pitch**.
+2. Notice that Pitch is marked as audio-connected.
+3. Press **Start Audio**.
+4. Press **Manual trigger** a few times.
+5. Change **Slew amount**.
+6. Watch the held/slewed main CV move.
+7. Listen for the oscillator pitch following that held/slewed main CV.
+8. Watch the audio status show the main CV voltage and pitch in Hz.
+9. Press **Panic / Stop Audio** when finished.
 
 Listen for:
 
@@ -259,8 +241,6 @@ Still visual only:
 - Super low companion output
 
 ### Recipe 3: Noise into S&H, visual only
-
-Use this when you want less predictable held values.
 
 Settings:
 
@@ -281,16 +261,7 @@ Listen for:
 
 - nothing; this recipe is visual only
 
-Still visual only:
-
-- filter cutoff
-- level
-- Super high companion output
-- Super low companion output
-
 ### Recipe 4: Manual CV into S&H, controlled test
-
-Use this when you want to choose the input value yourself.
 
 Settings:
 
@@ -312,16 +283,7 @@ Listen for:
 - if audio is running, pitch follows the held/slewed version of the captured manual value
 - if audio is off, use the Scope only
 
-Still visual only:
-
-- filter cutoff
-- level
-- Super high companion output
-- Super low companion output
-
 ### Recipe 5: T&H comparison patch
-
-Use this when you want to compare tracking with holding.
 
 Settings:
 
@@ -343,20 +305,7 @@ Listen for:
 - if audio is running, pitch moves while tracking and holds when the gate closes
 - if audio is off, use the Scope only
 
-Still visual only:
-
-- filter cutoff
-- level
-- Super high companion output
-- Super low companion output
-
 ## Common beginner confusions
-
-Use this section when something looks like it should change the sound, but it does not.
-
-The current app is a teaching lab first.
-
-It is not a full synth voice yet.
 
 ### Why does Filter cutoff not change the sound?
 
@@ -400,9 +349,15 @@ Scope is a visual teaching view.
 
 It shows what the voltage is doing over time.
 
-It helps you see the input, held output, slew, timing, and companion paths.
-
 The Scope itself does not make sound.
+
+### Why is Pitch different?
+
+Pitch is the only audio-connected destination.
+
+When Start Audio is running, the oscillator follows the held/slewed main CV.
+
+The Pitch destination now makes this explicit with an audio-connected badge and clearer status text.
 
 ### Why is Start Audio optional?
 
@@ -420,7 +375,7 @@ It is there so you can silence the app quickly.
 
 Using it does not break the visual patch.
 
-You can keep using the manual, scope, controls, and visual destinations after stopping audio.
+You can keep using the scope, controls, and visual destinations after stopping audio.
 
 ### What remains visual only?
 
@@ -499,16 +454,9 @@ look at the input -> capture the value -> hold that value
 
 The input voltage keeps moving.
 
-The held output does not keep moving all the time.
-
-It changes only when a trigger happens.
+The held output changes only when a trigger happens.
 
 A trigger is a short event that tells the Sample & Hold to capture a new value.
-
-In Sample Hold Lab, triggers can come from:
-
-- the automatic clock
-- the manual trigger button
 
 In S&H mode:
 
@@ -557,10 +505,6 @@ It shows one main held path and two related companion paths:
 - main held/slewed output
 - Super high companion output
 - Super low companion output
-
-These outputs are related.
-
-They are shown together so you can see that one sampled value can create more than one related control path.
 
 Only the main held/slewed output controls oscillator pitch.
 
@@ -626,15 +570,6 @@ The audio status shows the current main CV voltage and the resulting oscillator 
 Changing Slew amount can make the pitch movement sharper or smoother.
 
 Panic / Stop Audio stops and disconnects the oscillator.
-
-Use it when:
-
-- you want silence immediately
-- the sound is annoying
-- the browser audio state feels stuck
-- you want to reset the audio demo safely
-
-The app should still be usable visually after Panic / Stop Audio.
 
 ### 10. What not to expect yet
 
@@ -720,18 +655,6 @@ The Super high and Super low outputs are visual companions only.
 
 ## Mini glossary
 
-Use this section when a word in the manual is unfamiliar.
-
-The glossary does not add new behaviour.
-
-The only audio path remains:
-
-```text
-held/slewed main CV -> oscillator pitch
-```
-
-Filter cutoff, level, Super high, and Super low remain visual only.
-
 | Term | Meaning in this app |
 |---|---|
 | control voltage / CV | A changing value used to control something else. In this app, it is shown on screen and can control oscillator pitch only through the main held/slewed CV path. |
@@ -751,7 +674,7 @@ Filter cutoff, level, Super high, and Super low remain visual only.
 | VCF | Voltage-controlled filter. There is no working audio VCF in the app yet. |
 | VCA | Voltage-controlled amplifier. There is no working audio VCA in the app yet. |
 | visual only | Shown on screen, but not changing the sound. |
-| audio-connected | Connected to something you can hear. Right now, only pitch is audio-connected. |
+| audio-connected | Connected to something you can hear. Right now, only Pitch is audio-connected. |
 
 ## Manual-as-we-go rule
 
