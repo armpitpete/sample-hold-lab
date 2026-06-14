@@ -20,7 +20,7 @@ if (!slewedValue) {
 }
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v5.0';
+  eyebrow.textContent = 'Software Prototype v5.2';
 }
 
 const audioSafetyPanel = document.createElement('section');
