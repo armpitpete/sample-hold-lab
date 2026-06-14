@@ -33,6 +33,7 @@ const DEFAULT_MANUAL_CV_VOLTS = 0;
 const SUPER_SPREAD_VOLTS = 0.9;
 const NOISE_UPDATE_INTERVAL_MS = 90;
 const NOISE_SMOOTHING_AMOUNT = 0.18;
+const SCOPE_MESSAGE_MS = 1200;
 const PLOT: PlotBox = {
   left: 62,
   right: 22,
@@ -49,9 +50,9 @@ if (!app) {
 app.innerHTML = `
   <section class="lab-shell">
     <header class="hero">
-      <p class="eyebrow">Software Prototype v7.0</p>
+      <p class="eyebrow">Software Prototype v7.1</p>
       <h1>Sample Hold Lab</h1>
-      <p class="intro">A compact visual CV lab showing Sample &amp; Hold, Track &amp; Hold, Super S&amp;H, slew, jitter, and one safe pitch-audio demo.</p>
+      <p class="intro">A compact visual CV lab. Change a setting and the scope restarts so the new behaviour is easier to see.</p>
     </header>
 
     <section class="patch-flow" aria-label="Limited patch signal flow">
@@ -114,7 +115,7 @@ app.innerHTML = `
       <article class="module-card trigger-module">
         <span class="module-label">Event sources</span>
         <h2>Trigger / Gate / Slew / Jitter</h2>
-        <p>Clock timing can jitter. Super S&amp;H uses one trigger to create related visual outputs.</p>
+        <p>Clock timing can jitter. Changing controls restarts the scope view.</p>
 
         <div class="event-control-group">
           <button id="triggerButton" type="button">Manual trigger</button>
@@ -237,6 +238,8 @@ let manualTriggerQueued = false;
 let gateOpenState = false;
 let lastEventSource: EventSource = null;
 let clockScheduleNeedsReset = true;
+let scopeChangeMessage = '';
+let scopeChangeMessageVisibleUntil = 0;
 const history: SamplePoint[] = [];
 
 triggerButton.addEventListener('click', () => {
@@ -246,46 +249,40 @@ triggerButton.addEventListener('click', () => {
 clockRateInput.addEventListener('input', () => {
   clockRateHz = Number(clockRateInput.value);
   clockRateValue.value = formatClockRate(clockRateHz);
-  clockScheduleNeedsReset = true;
+  restartScopeForSettingChange('Scope restarted: clock rate changed');
 });
 
 slewAmountInput.addEventListener('input', () => {
   slewAmount = Number(slewAmountInput.value);
   slewAmountValue.value = formatSlewAmount(slewAmount);
+  restartScopeForSettingChange('Scope restarted: slew changed');
 });
 
 jitterAmountInput.addEventListener('input', () => {
   jitterAmount = Number(jitterAmountInput.value);
   jitterAmountValue.value = formatJitterAmount(jitterAmount);
-  clockScheduleNeedsReset = true;
+  restartScopeForSettingChange('Scope restarted: jitter changed');
 });
 
 manualCvInput.addEventListener('input', () => {
   manualCvVoltage = Number(manualCvInput.value);
   manualCvValue.value = formatVoltage(manualCvVoltage);
+  restartScopeForSettingChange('Scope restarted: manual CV changed', true);
 });
 
 inputSourceSelect.addEventListener('change', () => {
   inputSource = inputSourceSelect.value as InputSource;
-  history.length = 0;
-  lastEventSource = null;
-  lastEventTime = 0;
-  gateOpenState = false;
-  clockScheduleNeedsReset = true;
   resetNoiseSource();
   updateInputSourceText();
   updateManualCvControl();
+  restartScopeForSettingChange('Scope restarted: input source changed', true);
 });
 
 modeInputs.forEach((input) => {
   input.addEventListener('change', () => {
     mode = input.value as Mode;
-    history.length = 0;
-    lastEventSource = null;
-    lastEventTime = 0;
-    gateOpenState = false;
-    clockScheduleNeedsReset = true;
     updateModeText();
+    restartScopeForSettingChange('Scope restarted: mode changed', true);
   });
 });
 
@@ -348,6 +345,30 @@ function updateInputSourceText(): void {
 
 function updateManualCvControl(): void {
   manualCvControl.hidden = inputSource !== 'manual-cv-placeholder';
+}
+
+function restartScopeForSettingChange(message: string, recaptureOutput = false): void {
+  history.length = 0;
+  manualTriggerQueued = false;
+  lastEventSource = null;
+  lastEventTime = 0;
+  gateOpenState = false;
+  clockScheduleNeedsReset = true;
+  clockPulseVisibleUntil = 0;
+
+  if (recaptureOutput) {
+    const currentInput = calculateInputVoltage(performance.now());
+    captureMainTarget(currentInput);
+    slewedMainVoltage = rawMainVoltage;
+    slewedHighVoltage = rawHighVoltage;
+    slewedLowVoltage = rawLowVoltage;
+  }
+
+  scopeChangeMessage = message;
+  scopeChangeMessageVisibleUntil = performance.now() + SCOPE_MESSAGE_MS;
+  triggerState.value = message;
+  clockPulseState.value = 'Scope restarted';
+  gateState.value = 'Gate inactive';
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -424,19 +445,19 @@ function takeJitteredClockEvent(timeMs: number): boolean {
 
 function updateModeText(): void {
   if (mode === 'sample-hold') {
-    modeDescription.textContent = 'S&H captures one raw target. Slew smooths the output toward it.';
-    scopeDescription.textContent = 'S&H mode: one held/slewed output from each trigger.';
+    modeDescription.textContent = 'S&H mode: one held/slewed output from each trigger. Setting changes restart the graph.';
+    scopeDescription.textContent = 'S&H mode: graph restarts when settings change, so the new behaviour is easier to see.';
     return;
   }
 
   if (mode === 'track-hold') {
-    modeDescription.textContent = 'T&H follows while gate is open, then holds when gate closes.';
-    scopeDescription.textContent = 'T&H mode: output follows during gate-open areas and holds during gate-closed areas.';
+    modeDescription.textContent = 'T&H follows while gate is open, then holds when gate closes. Setting changes restart the graph.';
+    scopeDescription.textContent = 'T&H mode: graph restarts when settings change, so tracking and holding are easier to compare.';
     return;
   }
 
-  modeDescription.textContent = 'Super S&H captures one main target and two related companion targets from the same trigger.';
-  scopeDescription.textContent = 'Super S&H mode: one trigger creates three related held/slewed visual outputs.';
+  modeDescription.textContent = 'Super S&H captures one main target and two related companion targets. Setting changes restart the graph.';
+  scopeDescription.textContent = 'Super S&H mode: graph restarts when settings change, so companion paths are easier to compare.';
 }
 
 function drawGrid(width: number, height: number): void {
@@ -480,6 +501,27 @@ function drawGrid(width: number, height: number): void {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText('time →', PLOT.left + plotWidth(width) / 2, height - 10);
+}
+
+function drawScopeChangeMessage(timeMs: number, width: number): void {
+  if (timeMs >= scopeChangeMessageVisibleUntil || !scopeChangeMessage) {
+    return;
+  }
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(2, 6, 23, 0.82)';
+  ctx.strokeStyle = 'rgba(250, 204, 21, 0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.roundRect(width - 335, PLOT.top + 8, 305, 30, 10);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#fde68a';
+  ctx.font = '800 12px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(scopeChangeMessage, width - 320, PLOT.top + 23);
+  ctx.restore();
 }
 
 function drawRegularClockMarks(points: SamplePoint[], width: number, height: number): void {
@@ -820,6 +862,7 @@ function animate(timeMs: number): void {
   }
 
   drawCurrentMarkers(visiblePoints, width, height);
+  drawScopeChangeMessage(timeMs, width);
 
   inputValue.value = formatVoltage(currentInput);
   rawValue.value = `Raw ${formatVoltage(rawMainVoltage)}`;
@@ -834,8 +877,13 @@ function animate(timeMs: number): void {
 
   const eventAge = timeMs - lastEventTime;
   const recentlyChanged = eventAge < 450;
+  const showingScopeMessage = timeMs < scopeChangeMessageVisibleUntil;
 
-  if (mode === 'track-hold') {
+  if (showingScopeMessage) {
+    triggerState.value = scopeChangeMessage;
+    clockPulseState.value = 'Scope restarted';
+    gateState.value = 'Gate inactive';
+  } else if (mode === 'track-hold') {
     triggerState.value = gateOpenState ? 'Tracking target' : 'Holding target';
     clockPulseState.value = timeMs < clockPulseVisibleUntil ? 'Jittered gate edge' : 'Jitter drives gate';
     gateState.value = gateOpenState ? 'Gate open' : 'Gate closed';
@@ -846,8 +894,8 @@ function animate(timeMs: number): void {
     gateState.value = 'Gate inactive';
   }
 
-  triggerState.classList.toggle('is-triggered', mode === 'track-hold' ? gateOpenState : recentlyChanged);
-  clockPulseState.classList.toggle('is-triggered', timeMs < clockPulseVisibleUntil);
+  triggerState.classList.toggle('is-triggered', showingScopeMessage || (mode === 'track-hold' ? gateOpenState : recentlyChanged));
+  clockPulseState.classList.toggle('is-triggered', showingScopeMessage || timeMs < clockPulseVisibleUntil);
   gateState.classList.toggle('is-triggered', mode === 'track-hold' && gateOpenState);
 
   requestAnimationFrame(animate);
