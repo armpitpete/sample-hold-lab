@@ -5,6 +5,8 @@ type AudioContextConstructor = typeof AudioContext;
 const MIN_PITCH_HZ = 110;
 const CENTRE_PITCH_HZ = 220;
 const MAX_PITCH_HZ = 880;
+const SAFE_GAIN_LEVEL = 0.025;
+const SAFE_GAIN_LIMIT = 0.03;
 const PITCH_UPDATE_INTERVAL_MS = 50;
 
 const patchFlow = document.querySelector<HTMLElement>('.patch-flow');
@@ -20,22 +22,39 @@ if (!slewedValue) {
 }
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v7.1';
+  eyebrow.textContent = 'Software Prototype v7.2';
 }
+
+removeLegacyAudioSafetySections();
 
 const audioSafetyPanel = document.createElement('section');
 audioSafetyPanel.className = 'audio-safety-panel';
 audioSafetyPanel.setAttribute('aria-label', 'Audio safety controls');
 audioSafetyPanel.innerHTML = `
-  <div>
+  <div class="audio-safety-copy">
     <span class="module-label">Audio safety</span>
     <h2>Start / Panic Stop</h2>
-    <p>Starts one quiet oscillator. Held/slewed main CV controls pitch only.</p>
+    <p>One audio section only. Starts one quiet oscillator. Held/slewed main CV controls pitch only.</p>
   </div>
-  <div class="audio-safety-actions">
-    <button id="startAudioButton" type="button">Start Audio</button>
-    <button id="panicStopButton" type="button" class="panic-stop-button">Panic / Stop Audio</button>
-    <output id="audioSafetyStatus" class="audio-safety-status">Audio idle · oscillator stopped</output>
+  <div class="audio-safety-main">
+    <div class="audio-safety-actions">
+      <button id="startAudioButton" type="button">Start Audio</button>
+      <button id="panicStopButton" type="button" class="panic-stop-button">Panic / Stop Audio</button>
+    </div>
+    <div class="audio-safety-readouts" aria-label="Audio safety readouts">
+      <div class="audio-readout-card">
+        <span>Status</span>
+        <output id="audioSafetyStatus" class="audio-safety-status">Audio idle · oscillator stopped</output>
+      </div>
+      <div class="audio-readout-card">
+        <span>Safe output clamp</span>
+        <output id="audioClampStatus" class="audio-safety-status">0.025 safe level, 0.03 max</output>
+      </div>
+      <div class="audio-readout-card">
+        <span>Oscillator pitch</span>
+        <output id="audioPitchStatus" class="audio-safety-status">—</output>
+      </div>
+    </div>
   </div>
 `;
 
@@ -44,8 +63,10 @@ patchFlow.insertAdjacentElement('afterend', audioSafetyPanel);
 const startAudioButton = audioSafetyPanel.querySelector<HTMLButtonElement>('#startAudioButton');
 const panicStopButton = audioSafetyPanel.querySelector<HTMLButtonElement>('#panicStopButton');
 const audioSafetyStatus = audioSafetyPanel.querySelector<HTMLOutputElement>('#audioSafetyStatus');
+const audioClampStatus = audioSafetyPanel.querySelector<HTMLOutputElement>('#audioClampStatus');
+const audioPitchStatus = audioSafetyPanel.querySelector<HTMLOutputElement>('#audioPitchStatus');
 
-if (!startAudioButton || !panicStopButton || !audioSafetyStatus) {
+if (!startAudioButton || !panicStopButton || !audioSafetyStatus || !audioClampStatus || !audioPitchStatus) {
   throw new Error('Audio safety controls were not created');
 }
 
@@ -54,9 +75,42 @@ let oscillator: OscillatorNode | null = null;
 let outputGain: GainNode | null = null;
 let pitchUpdateTimer: number | null = null;
 
+function removeLegacyAudioSafetySections(): void {
+  const legacyHeadings = Array.from(document.querySelectorAll<HTMLElement>('h2, h3, .module-label'));
+
+  legacyHeadings.forEach((heading) => {
+    const text = heading.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const isLegacyAudioSection = text.includes('Audio Demo / Safety') || text.includes('PHASE 4 STOPPED AT');
+
+    if (!isLegacyAudioSection) {
+      return;
+    }
+
+    const legacySection = heading.closest<HTMLElement>('section, article');
+
+    if (!legacySection || legacySection.classList.contains('audio-safety-panel')) {
+      return;
+    }
+
+    legacySection.remove();
+  });
+}
+
+function setOutput(output: HTMLOutputElement, message: string): void {
+  output.value = message;
+  output.textContent = message;
+}
+
 function setAudioStatus(message: string): void {
-  audioSafetyStatus.value = message;
-  audioSafetyStatus.textContent = message;
+  setOutput(audioSafetyStatus, message);
+}
+
+function setClampStatus(): void {
+  setOutput(audioClampStatus, `${SAFE_GAIN_LEVEL.toFixed(3)} safe level, ${SAFE_GAIN_LIMIT.toFixed(2)} max`);
+}
+
+function setPitchStatus(message: string): void {
+  setOutput(audioPitchStatus, message);
 }
 
 function getAudioContext(): AudioContext {
@@ -96,7 +150,7 @@ function voltageToPitchHz(voltage: number): number {
 }
 
 function formatPitchStatus(voltage: number, pitchHz: number): string {
-  return `Audio running · main CV ${voltage.toFixed(2)} V → ${pitchHz.toFixed(0)} Hz`;
+  return `main CV ${voltage.toFixed(2)} V → ${pitchHz.toFixed(0)} Hz`;
 }
 
 function updateOscillatorPitch(): void {
@@ -107,9 +161,11 @@ function updateOscillatorPitch(): void {
   const voltage = readSlewedMainVoltage();
   const pitchHz = voltageToPitchHz(voltage);
   const now = audioContext.currentTime;
+  const pitchStatus = formatPitchStatus(voltage, pitchHz);
 
   oscillator.frequency.setTargetAtTime(pitchHz, now, 0.025);
-  setAudioStatus(formatPitchStatus(voltage, pitchHz));
+  setAudioStatus(`Audio running · ${pitchStatus}`);
+  setPitchStatus(`${pitchHz.toFixed(1)} Hz`);
 }
 
 function stopPitchUpdates(): void {
@@ -161,11 +217,12 @@ async function startOneSafeOscillator(): Promise<void> {
     const safeGain = context.createGain();
     const safeOscillator = context.createOscillator();
     const startingVoltage = readSlewedMainVoltage();
+    const startingPitch = voltageToPitchHz(startingVoltage);
 
     safeOscillator.type = 'sine';
-    safeOscillator.frequency.setValueAtTime(voltageToPitchHz(startingVoltage), now);
+    safeOscillator.frequency.setValueAtTime(startingPitch, now);
 
-    safeGain.gain.setValueAtTime(0.025, now);
+    safeGain.gain.setValueAtTime(SAFE_GAIN_LEVEL, now);
 
     safeOscillator.connect(safeGain);
     safeGain.connect(context.destination);
@@ -175,6 +232,8 @@ async function startOneSafeOscillator(): Promise<void> {
     oscillator = safeOscillator;
     outputGain = safeGain;
 
+    setClampStatus();
+    setPitchStatus(`${startingPitch.toFixed(1)} Hz`);
     startPitchUpdates();
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Audio start failed';
@@ -185,7 +244,11 @@ async function startOneSafeOscillator(): Promise<void> {
 function panicStopAudio(): void {
   stopOscillator();
   setAudioStatus('Panic stop complete · oscillator stopped');
+  setPitchStatus('—');
+  setClampStatus();
 }
+
+setClampStatus();
 
 startAudioButton.addEventListener('click', () => {
   void startOneSafeOscillator();
