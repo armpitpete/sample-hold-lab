@@ -18,22 +18,17 @@ const modeNames: Record<HoldMode, string> = {
 
 const destinationNames: Record<Destination, string> = {
   scope: 'Scope',
-  'filter-cutoff': 'Filter cutoff visual demo',
-  pitch: 'Pitch visual demo',
-  level: 'Level visual demo',
+  'filter-cutoff': 'Filter cutoff visual only',
+  pitch: 'Pitch audio-connected',
+  level: 'Level visual only',
 };
 
-const eyebrow = document.querySelector<HTMLElement>('.eyebrow');
 const ruleCard = document.querySelector<HTMLElement>('.rule-card');
 const inputSourceSelect = document.querySelector<HTMLSelectElement>('#inputSourceSelect');
 const clockRateInput = document.querySelector<HTMLInputElement>('#clockRate');
 const slewAmountInput = document.querySelector<HTMLInputElement>('#slewAmount');
 const jitterAmountInput = document.querySelector<HTMLInputElement>('#jitterAmount');
 const manualCvInput = document.querySelector<HTMLInputElement>('#manualCvInput');
-
-if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v2.6';
-}
 
 if (!ruleCard || !inputSourceSelect || !clockRateInput || !slewAmountInput || !jitterAmountInput || !manualCvInput) {
   throw new Error('Patch summary source elements not found');
