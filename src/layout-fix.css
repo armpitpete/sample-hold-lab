@@ -3,7 +3,7 @@ body {
 }
 
 .lab-shell {
-  width: min(1460px, calc(100% - 28px)) !important;
+  width: min(1560px, calc(100% - 28px)) !important;
   padding: 20px 0 28px !important;
 }
 
@@ -35,13 +35,10 @@ h2 {
 }
 
 .patch-flow {
-  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr) 48px minmax(0, 1fr) !important;
-  grid-template-areas:
-    "source cv processor out destination"
-    ". . triggerCable . ."
-    ". . trigger . ." !important;
-  gap: 12px !important;
-  align-items: start !important;
+  grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 34px minmax(0, 1fr) 34px minmax(0, 1fr) !important;
+  grid-template-areas: "source cv processor out destination triggerCable trigger" !important;
+  gap: 10px !important;
+  align-items: stretch !important;
   margin-bottom: 14px !important;
 }
 
@@ -88,40 +85,37 @@ h2 {
 }
 
 .cv-cable,
-.output-cable {
-  min-width: 48px !important;
+.output-cable,
+.trigger-cable {
+  min-width: 34px !important;
   min-height: 138px !important;
 }
 
 .cable {
-  min-width: 48px !important;
-  font-size: 0.58rem !important;
+  min-width: 34px !important;
+  font-size: 0.54rem !important;
 }
 
 .cable span {
-  padding: 3px 5px !important;
-}
-
-.trigger-cable {
-  min-height: 36px !important;
+  padding: 3px 4px !important;
 }
 
 .trigger-cable::before {
-  left: 50% !important;
-  right: auto !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 3px !important;
-  height: auto !important;
-  transform: translateX(-50%) !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: auto !important;
+  height: 3px !important;
+  transform: translateY(-50%) !important;
 }
 
 .trigger-cable::after {
-  right: auto !important;
-  left: 50% !important;
-  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  top: 50% !important;
   bottom: auto !important;
-  transform: translateX(-50%) rotate(-45deg) !important;
+  transform: translateY(-50%) rotate(45deg) !important;
 }
 
 button {
@@ -316,6 +310,15 @@ canvas {
   background: #fb923c !important;
 }
 
+@media (max-width: 1100px) {
+  .patch-flow {
+    grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "source cv processor"
+      "destination triggerCable trigger" !important;
+  }
+}
+
 @media (max-width: 880px) {
   body {
     font-size: 15px;
@@ -342,6 +345,24 @@ canvas {
   .output-cable,
   .trigger-cable {
     min-height: 34px !important;
+  }
+
+  .trigger-cable::before {
+    left: 50% !important;
+    right: auto !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 3px !important;
+    height: auto !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .trigger-cable::after {
+    right: auto !important;
+    left: 50% !important;
+    top: auto !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) rotate(135deg) !important;
   }
 
   .scope-header,
