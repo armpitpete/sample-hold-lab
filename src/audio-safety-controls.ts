@@ -5,7 +5,7 @@ type AudioContextConstructor = typeof AudioContext;
 const MIN_PITCH_HZ = 110;
 const CENTRE_PITCH_HZ = 220;
 const MAX_PITCH_HZ = 880;
-const PITCH_UPDATE_INTERVAL_MS = 35;
+const PITCH_UPDATE_INTERVAL_MS = 50;
 
 const patchFlow = document.querySelector<HTMLElement>('.patch-flow');
 const eyebrow = document.querySelector<HTMLElement>('.eyebrow');
@@ -20,7 +20,7 @@ if (!slewedValue) {
 }
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v4.5';
+  eyebrow.textContent = 'Software Prototype v5.0';
 }
 
 const audioSafetyPanel = document.createElement('section');
@@ -95,6 +95,10 @@ function voltageToPitchHz(voltage: number): number {
   return CENTRE_PITCH_HZ + (voltage / 5) * (CENTRE_PITCH_HZ - MIN_PITCH_HZ);
 }
 
+function formatPitchStatus(voltage: number, pitchHz: number): string {
+  return `Audio running · main CV ${voltage.toFixed(2)} V → ${pitchHz.toFixed(0)} Hz`;
+}
+
 function updateOscillatorPitch(): void {
   if (!audioContext || !oscillator) {
     return;
@@ -105,7 +109,7 @@ function updateOscillatorPitch(): void {
   const now = audioContext.currentTime;
 
   oscillator.frequency.setTargetAtTime(pitchHz, now, 0.025);
-  setAudioStatus(`Audio running · pitch follows slewed main CV · ${pitchHz.toFixed(0)} Hz`);
+  setAudioStatus(formatPitchStatus(voltage, pitchHz));
 }
 
 function stopPitchUpdates(): void {
