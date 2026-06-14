@@ -44,7 +44,7 @@ const outputCableLabel = document.querySelector<HTMLElement>('.output-cable span
 const slewedValue = document.querySelector<HTMLOutputElement>('#slewedValue');
 
 if (eyebrow) {
-  eyebrow.textContent = 'Software Prototype v7.0';
+  eyebrow.textContent = 'Software Prototype v7.1';
 }
 
 if (!destinationModule) {
