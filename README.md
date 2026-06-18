@@ -1,80 +1,55 @@
 # Sample Hold Lab
 
-Sample Hold Lab is a small visual control-voltage learning app.
+Sample Hold Lab is a small browser-based control-voltage learning app.
 
-It explains Sample & Hold, Track & Hold, slew, timing jitter, Super S&H behaviour, limited visual patch choices, visual destination demos, and a frozen first audio demo through visible signal flow.
+It shows how Sample & Hold, Track & Hold, slew, timing jitter, and Super S&H behaviour affect a visible control-voltage graph.
 
-Current prototype: **v2.9**.
-
-Current stable audio boundary: **v2.8**.
-
-Current stable visual freeze: **v2.3**.
-
-## Current decision
-
-**Phase 4 stops at v2.8.**
-
-**v2.9 records the decision.**
-
-**Future work should move into the manual before more audio features.**
-
-The first audio demo is stable enough to stop here. Adding filter audio or level audio now would move the app toward a synth voice instead of a Sample & Hold teaching lab.
-
-The next implementation work should improve the beginner manual, not add more sound.
-
-## Manual
-
-The beginner manual starts here:
-
-```text
-docs/MANUAL.md
-```
-
-Manual-as-we-go rule:
-
-- update the manual as the app changes
-- explain what the user sees
-- explain what the user hears
-- explain what remains visual only
-- avoid adding more audio features before the current behaviour is explained clearly
-
-## Current build
-
-The current stable audio demo has one audio path:
+It also includes one safe audio demo:
 
 ```text
 held/slewed main CV -> oscillator pitch
 ```
 
-The Audio Demo / Safety panel can start one quiet oscillator and stop it with Panic / Stop Audio.
+## Live app
 
-The oscillator pitch is controlled by the existing slewed held CV value. LFO, Noise, and Manual CV can all drive the held-CV-to-pitch demo through the existing S&H, T&H, and Super S&H behaviour.
+Open the current GitHub Pages build here:
 
-The pitch range remains clamped safely:
+```text
+https://armpitpete.github.io/sample-hold-lab/
+```
 
-- low: 110 Hz
-- centre: 220 Hz
-- high: 440 Hz
+## Current prototype state
 
-This build does not add filter audio, level audio, VCF, VCA, effects, MIDI, presets, save/load, free patch cables, a modulation matrix, multiple oscillators, multiple audio destinations, or a full synth voice.
+Current working direction: **live teaching workbench**.
 
-## Phase 4 plan
+The desktop layout is designed so the user can adjust controls and watch the scope at the same time:
 
-Phase 4 added sound only in small, safe steps.
+```text
+controls | scope graph
+```
 
-Safe order:
+The graph restarts when key settings change, so the effect is easier to see immediately.
 
-1. Add audio safety controls first. Complete in v2.5.
-2. Add one oscillator only. Complete in v2.6.
-3. Map held CV to pitch only. Complete in v2.7.
-4. Check and freeze the first audio demo boundary. Complete in v2.8.
-5. Stop Phase 4. Recorded in v2.9.
+## Current audio boundary
 
-Phase 4 stops here.
+The only audio-connected path is:
+
+```text
+held/slewed main CV -> oscillator pitch
+```
+
+Only **Pitch** is audio-connected.
+
+These remain visual only:
+
+- filter cutoff
+- level
+- Super high companion output
+- Super low companion output
 
 ## What this project teaches
 
-The app shows how a changing voltage becomes a held or tracked control signal, then shows how that held control voltage could be sent to different visual destinations.
+The app shows how a changing voltage becomes a held or tracked control signal.
 
 Core idea:
 
@@ -90,12 +65,10 @@ This project is:
 
 - a visual CV behaviour lab
 - a teaching aid for Sample & Hold concepts
-- a limited patchable visual prototype
-- a visual destination demo layer
-- a frozen first audio demo
+- a live graph workbench
+- a limited visual destination demo
 - a safe single-oscillator pitch demo
 - a small Vite + TypeScript browser app
-- a teaching-lab project that now needs a manual before more audio work
 
 ## What this project is not
 
@@ -163,52 +136,103 @@ Only the main held/slewed path controls oscillator pitch.
 
 Scope shows the input, raw held value, slewed main output, and Super S&H companion outputs.
 
-### Pitch visual demo
+### Pitch
 
-Pitch shows how the held CV moves pitch visually.
+Pitch is the only audio-connected destination.
 
-The audio oscillator also follows the existing slewed main held CV while audio is running.
+When audio is running, one quiet oscillator follows the existing slewed main held CV.
 
-### Filter cutoff visual demo
+### Filter cutoff
 
 Filter cutoff shows how the held CV would open or close a filter cutoff visually.
 
 No filter or filter audio is running.
 
-### Level visual demo
+### Level
 
 Level shows how the held CV would change output level visually.
 
 No amplifier or level audio is running.
 
-## Audio Demo / Safety panel
+## Audio safety
 
-The safety panel is the controlled audio area for Phase 4.
+The app has one audio safety section.
 
 It includes:
 
-- Start Audio button
-- Panic / Stop Audio button
-- status text: Audio off, Audio running, Audio stopped, or Audio unavailable
+- Start Audio
+- Panic / Stop Audio
+- status readout
 - safe output clamp readout
-- live oscillator pitch readout
+- oscillator pitch readout
 
-Pressing Start Audio starts one quiet sine oscillator.
+Pressing **Start Audio** starts one quiet sine oscillator.
 
-The oscillator pitch follows the existing slewed main held CV value while audio is running.
+Pressing **Panic / Stop Audio** stops and disconnects the oscillator.
 
-Pressing Panic / Stop Audio stops and disconnects the oscillator.
+## Run locally
 
-Only oscillator pitch is audio-controlled.
+Install dependencies:
 
-These remain visual only:
+```bash
+npm install
+```
 
-- filter cutoff
-- level
-- Super high companion output
-- Super low companion output
+Run the local dev server:
 
-## Controls
+```bash
+npm run dev
+```
+
+Build the app:
+
+```bash
+npm run build
+```
+
+Preview the built app locally:
+
+```bash
+npm run preview
+```
+
+## GitHub Pages deployment
+
+The repo uses GitHub Actions to build and deploy the app to GitHub Pages.
+
+Workflow file:
+
+```text
+.github/workflows/pages.yml
+```
+
+The workflow runs on pushes to `main` and can also be started manually from the GitHub Actions tab.
+
+It builds the Vite app and deploys the generated `dist/` folder to GitHub Pages.
+
+Required GitHub Pages setting:
+
+```text
+Settings -> Pages -> Build and deployment -> Source -> GitHub Actions
+```
+
+## Manual
+
+The beginner manual starts here:
+
+```text
+docs/MANUAL.md
+```
+
+Manual-as-we-go rule:
+
+- update the manual as the app changes
+- explain what the user sees
+- explain what the user hears
+- explain what remains visual only
+- avoid adding more audio features before the current behaviour is explained clearly
+
+## Current controls
 
 | Control | Purpose |
 |---|---|
@@ -218,108 +242,22 @@ These remain visual only:
 | Manual trigger | Fire a trigger immediately |
 | Clock / gate rate | Change the automatic event speed |
 | Slew amount | Smooth output movement toward the raw target |
-| Timing jitter | Move automatic trigger/gate timing slightly before or after the regular clock reference |
-| Patch summary | Show the current visual patch choices |
-| Start Audio | Start one quiet oscillator whose pitch follows held CV |
+| Timing jitter | Make automatic trigger/gate timing less exact |
+| Start Audio | Start one quiet oscillator |
 | Panic / Stop Audio | Stop and disconnect the oscillator |
 
-## Version summary
+## Do not add without planning
 
-| Version | Purpose | Status |
-|---|---|---|
-| v0.1 | Fixed visual S&H patch | Complete |
-| v0.2 | Clearer scope and voltage labels | Complete |
-| v0.3 | Automatic clock trigger | Complete |
-| v0.4 | Track & Hold mode | Complete |
-| v0.5 | Slew control | Complete |
-| v0.6 | Timing jitter control | Complete |
-| v0.7 | Super S&H visual comparison | Complete |
-| v0.8 | Phase 1 stable freeze | Frozen |
-| v0.9 | Phase planning | Complete |
-| v1.0 | Selectable input source | Complete |
-| v1.1 | Noise input source | Complete |
-| v1.2 | Manual CV source | Complete |
-| v1.3 | Visual destination selector | Complete |
-| v1.4 | Patch summary panel | Complete |
-| v1.5 | Phase 2 stable freeze | Frozen |
-| v2.0 | Improved pitch-style visual destination | Complete |
-| v2.1 | Improved filter-cutoff-style visual destination | Complete |
-| v2.2 | Improved level-style visual destination | Complete |
-| v2.3 | Phase 3 stable freeze | Frozen |
-| v2.4 | Plan Phase 4 limited audio demo | Complete |
-| v2.5 | Add audio safety controls only | Complete |
-| v2.6 | Add one simple oscillator only | Complete |
-| v2.7 | Map held CV to oscillator pitch only | Complete |
-| v2.8 | Audio demo behaviour check and boundary freeze | Frozen |
-| v2.9 | Decide whether Phase 4 stops here | Current |
+Do not add these without a separate planning issue:
 
-## Run locally
-
-Install dependencies:
-
-```powershell
-npm install
-```
-
-Start the development server:
-
-```powershell
-npm run dev
-```
-
-Build the project:
-
-```powershell
-npm run build
-```
-
-Preview the production build:
-
-```powershell
-npm run preview
-```
-
-## Local test checklist
-
-Before closing the v2.9 decision issue, check:
-
-```text
-1. npm install completes.
-2. npm run dev starts the Vite server.
-3. npm run build completes.
-4. App loads without console-breaking errors.
-5. Visible prototype label shows Software Prototype v2.9.
-6. The audio behaviour still matches v2.8.
-7. docs/MANUAL.md exists.
-8. README says Phase 4 stops at v2.8.
-9. README says future work moves into the manual before more audio features.
-10. No filter audio, level audio, MIDI, presets, save/load, free patch cables, modulation matrix, multiple oscillators, multiple audio destinations, or synth voice architecture has been added.
-```
-
-## Freeze rule
-
-v2.3 freezes Phase 3 as a stable visual destination demo layer.
-
-v2.4 plans Phase 4 boundaries.
-
-v2.5 adds the safety controls only.
-
-v2.6 adds one fixed quiet oscillator only.
-
-v2.7 maps held CV to oscillator pitch only.
-
-v2.8 freezes the first working audio demo boundary.
-
-v2.9 records that Phase 4 stops at v2.8.
-
-Do not add filter audio or level audio before the manual explains the current app clearly.
-
-Future work should be opened as separate issues and should stay clearly scoped.
-
-Next likely issue:
-
-- v3.0 — Create first beginner manual pass
-
-## Licence
-
-MIT.
+- filter audio
+- level audio
+- VCF / VCA
+- MIDI
+- presets
+- save/load
+- patch cables
+- modulation matrix
+- extra oscillators
+- effects
+- new audio destinations
