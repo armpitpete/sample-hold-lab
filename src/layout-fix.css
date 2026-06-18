@@ -363,12 +363,14 @@ canvas {
   }
 
   .scope-panel {
+    display: grid !important;
     grid-area: scope !important;
+    grid-template-rows: auto minmax(460px, 1fr) !important;
     position: sticky !important;
     top: 12px !important;
     align-self: start !important;
+    min-height: calc(100vh - 44px) !important;
     margin-bottom: 0 !important;
-    min-height: 100% !important;
   }
 
   .scope-header {
@@ -377,7 +379,9 @@ canvas {
 
   .scope-panel canvas {
     width: 100% !important;
-    max-height: 520px !important;
+    height: min(64vh, 560px) !important;
+    max-height: none !important;
+    align-self: stretch !important;
   }
 
   .rule-card {
