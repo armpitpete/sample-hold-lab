@@ -1,5 +1,8 @@
 export type HoldMode = 'sample-hold' | 'track-hold' | 'companion-hold';
 
+export const REFERENCE_FREQUENCY_HZ = 220;
+export const REFERENCE_VOLTAGE = 0;
+
 export const clamp = (value:number,min=-5,max=5)=>Math.min(max,Math.max(min,value));
 
 export function slew(current:number,target:number,amount:number):number {
@@ -26,5 +29,5 @@ export function jitteredInterval(baseMs:number,jitter:number,random=0.5):number 
 }
 
 export function cvToFrequency(cv:number):number {
-  return Math.min(440,Math.max(110,220*Math.pow(2,clamp(cv)/5)));
+  return REFERENCE_FREQUENCY_HZ * Math.pow(2, cv - REFERENCE_VOLTAGE);
 }
