@@ -1,44 +1,27 @@
 # Sample & Hold Lab Manual
 
-Sample & Hold Lab is an interactive visual and audible laboratory for understanding how changing voltages become sampled, held, tracked and slewed control signals.
+## Learning route
 
-## Start here
-
-Open **Learn** and work through the six experiments in order:
+Work through the six Learn experiments before using Explore:
 
 1. Freeze a moving voltage.
-2. Hear steps become pitch.
+2. Hear exact 1 V/octave.
 3. Turn steps into glides.
 4. Compare tracking with sampling.
-5. Make timing imperfect.
-6. Hear three related companion voices.
+5. Compare continuous and quantized CV.
+6. Hear and isolate low, centre and high companions.
 
-Each experiment loads useful starting settings automatically. Use **Explore** after the behaviour makes sense.
-
-## Read the timeline
-
-The shared timeline has four lanes:
-
-- **Clock / gate** — event markers and Track & Hold gate-open periods.
-- **Input** — the changing voltage before capture.
-- **Captured target** — the raw held value.
-- **Slewed output** — the value after smoothing.
-
-A gold vertical line marks a trigger or gate edge. In Track & Hold mode, the shaded region means the gate is open.
-
-## Modes
+## Signal modes
 
 ### Sample & Hold
 
-A trigger captures the current input voltage. That value remains held until another trigger occurs. Audio uses one quiet centre voice.
+A trigger captures the current input voltage and holds it until the next trigger.
 
 ### Track & Hold
 
-The output follows the input while the gate is open. When the gate closes, the last value remains held. Audio uses one quiet centre voice.
+The output follows the input while the gate is open and freezes when it closes.
 
 ### Companion Hold
-
-One trigger creates three mathematically related values:
 
 ```text
 centre = sampled value
@@ -46,89 +29,71 @@ high   = centre + spread
 low    = centre - spread
 ```
 
-All three are clamped to the visible -5 V to +5 V range. When audio is running, Companion Hold maps all three values to three quiet sine voices:
+The three outputs are visible and audible. Use Mute or Solo to isolate each voice.
+
+## Pitch teaching
+
+Pitch follows exact 1 V/octave:
 
 ```text
-low companion CV    -> low voice
-centre slewed CV    -> centre voice
-high companion CV   -> high voice
+frequency = selected 0 V reference × 2^voltage
 ```
 
-The low and high voices are slightly separated left and right when stereo panning is available. The centre remains central. This separation is only an aid to hearing the relationship.
+Choose C3, A3, C4 or A4 as the 0 V reference. The interface always reports voltage, note name and frequency.
 
-## 1 V/octave pitch
+With Quantize to semitones off, pitch follows continuous CV. With it on, voltage is rounded to the nearest 1/12 V, producing twelve equal-tempered semitone steps per octave.
 
-The app now uses true 1 volt per octave pitch tracking.
+## Observation controls
 
-```text
-frequency = 220 Hz × 2^voltage
-```
+- **Normal:** ordinary simulation speed.
+- **Slow:** quarter speed.
+- **Very slow:** one-tenth speed.
+- **Pause:** freezes new simulation frames.
+- **Step once:** adds one frame while paused.
+- **Reset:** clears the timeline and cursors.
 
-The reference point is:
+Slow motion affects observation timing, not the 1 V/octave pitch rule.
 
-```text
-0 V = A3 = 220 Hz
-```
+## Oscilloscope cursors
 
-Useful reference values:
+Choose **Place cursor A** or **Place cursor B**, then click the graph. The readout reports input, held and output voltage at that position. With both cursors present, it also reports their frame separation. Use **Clear cursors** to remove them.
 
-| Voltage | Frequency | Relationship |
-|---:|---:|---|
-| -2 V | 55 Hz | two octaves below |
-| -1 V | 110 Hz | one octave below |
-| 0 V | 220 Hz | reference pitch |
-| +1 V | 440 Hz | one octave above |
-| +2 V | 880 Hz | two octaves above |
+## Voice controls
 
-A voltage change of exactly +1 V always doubles frequency. A change of -1 V always halves it.
+Sample & Hold and Track & Hold normally play only the centre voice. Companion Hold plays low, centre and high voices.
 
-This makes **Companion spread** musically direct:
+- **Mute:** removes one voice.
+- **Solo:** leaves only the chosen voice audible.
+- Press Solo again to return to the normal mix.
 
-- 0.5 V spread places companions half an octave from the centre.
-- 1 V spread places companions exactly one octave above and below.
-- 2 V spread places companions exactly two octaves above and below.
+Low and high are slightly separated in stereo where the browser supports panning. All voices use low fixed gain and one shared master path. **Panic / stop** stops every oscillator and closes the audio context.
 
-A companion output can stop moving further when it reaches the visible -5 V or +5 V limit.
+## Useful experiments
 
-## Controls
+### Hear an octave
 
-- **Input source:** LFO, irregular noise, or a manual voltage.
-- **Clock / gate rate:** how often automatic events occur.
-- **Slew:** how slowly output travels toward the captured target. Zero means immediate movement.
-- **Timing jitter:** moves automatic events away from perfectly regular timing, within a bounded range.
-- **Companion spread:** distance above and below the centre value in Companion Hold. Because pitch is 1 V/octave, the spread directly determines the octave relationship.
-- **Trigger now:** captures immediately in Sample & Hold and Companion Hold.
-- **Reset view:** clears the timeline and starts a fresh explanation.
+1. Select Manual CV and Sample & Hold.
+2. Set manual voltage to 0 V and trigger.
+3. Start audio and note the frequency.
+4. Set manual voltage to +1 V and trigger again.
+5. The frequency should exactly double.
 
-## Audio behaviour and safety
+### Hear quantization
 
-**Start audio** creates the three-voice audio engine, but the selected mode decides which voices are audible:
+1. Select LFO and Sample & Hold.
+2. Start audio with quantization off.
+3. Hear continuous pitch values.
+4. Turn Quantize to semitones on.
+5. Hear the same control signal rounded into musical steps.
 
-- **Sample & Hold:** centre voice only.
-- **Track & Hold:** centre voice only.
-- **Companion Hold:** low, centre and high voices together.
+### Compare Companion Hold voices
 
-Each voice has a low fixed gain. All voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the shared audio context.
-
-The interface shows the centre frequency at all times. In Companion Hold it also shows the low and high frequencies.
-
-## Companion Hold listening lesson
-
-1. Open experiment 6.
-2. Set **Companion spread** to exactly **1.0 V**.
-3. Press **Start audio**.
-4. Hear the low voice one octave below the centre and the high voice one octave above it.
-5. Move the spread to **0.5 V**. The voices move closer together.
-6. Move the spread to **2.0 V**. They become two octaves apart from the centre.
-7. Press **Trigger now** several times. The three voices move together because they come from one sampled centre value.
-8. Switch to Sample & Hold. The companion voices become silent and only the centre remains.
-9. Return to Companion Hold. All three voices return.
-10. Press **Panic / stop** when finished.
-
-## What just happened?
-
-The explanation panel describes each trigger or gate edge in plain language. In Companion Hold it reports the low, centre and high control voltages created by the current spread.
+1. Select Companion Hold.
+2. Set spread to 1.0 V.
+3. Start audio.
+4. Solo Low, Centre and High in turn.
+5. Low is one octave below centre and High is one octave above, unless a CV reaches the ±5 V boundary.
 
 ## Project boundary
 
-This is a focused control-voltage teaching laboratory, not a general synthesiser. The three oscillators are a deliberate teaching mechanism for Companion Hold. The project still does not include patch cables, effects, a modulation matrix, MIDI, filters, amplifiers, presets or save/load.
+This is a focused control-voltage teaching laboratory. It deliberately excludes patch cables, effects, MIDI, filters, amplifiers, modulation matrices, presets and save/load.
