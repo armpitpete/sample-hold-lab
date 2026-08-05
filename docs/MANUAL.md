@@ -56,13 +56,47 @@ high companion CV   -> high voice
 
 The low and high voices are slightly separated left and right when stereo panning is available. The centre remains central. This separation is only an aid to hearing the relationship.
 
+## 1 V/octave pitch
+
+The app now uses true 1 volt per octave pitch tracking.
+
+```text
+frequency = 220 Hz × 2^voltage
+```
+
+The reference point is:
+
+```text
+0 V = A3 = 220 Hz
+```
+
+Useful reference values:
+
+| Voltage | Frequency | Relationship |
+|---:|---:|---|
+| -2 V | 55 Hz | two octaves below |
+| -1 V | 110 Hz | one octave below |
+| 0 V | 220 Hz | reference pitch |
+| +1 V | 440 Hz | one octave above |
+| +2 V | 880 Hz | two octaves above |
+
+A voltage change of exactly +1 V always doubles frequency. A change of -1 V always halves it.
+
+This makes **Companion spread** musically direct:
+
+- 0.5 V spread places companions half an octave from the centre.
+- 1 V spread places companions exactly one octave above and below.
+- 2 V spread places companions exactly two octaves above and below.
+
+A companion output can stop moving further when it reaches the visible -5 V or +5 V limit.
+
 ## Controls
 
 - **Input source:** LFO, irregular noise, or a manual voltage.
 - **Clock / gate rate:** how often automatic events occur.
 - **Slew:** how slowly output travels toward the captured target. Zero means immediate movement.
 - **Timing jitter:** moves automatic events away from perfectly regular timing, within a bounded range.
-- **Companion spread:** distance above and below the centre value in Companion Hold. It changes both the visible gap and the audible pitch relationship.
+- **Companion spread:** distance above and below the centre value in Companion Hold. Because pitch is 1 V/octave, the spread directly determines the octave relationship.
 - **Trigger now:** captures immediately in Sample & Hold and Companion Hold.
 - **Reset view:** clears the timeline and starts a fresh explanation.
 
@@ -74,21 +108,22 @@ The low and high voices are slightly separated left and right when stereo pannin
 - **Track & Hold:** centre voice only.
 - **Companion Hold:** low, centre and high voices together.
 
-Every voice is clamped between 110 Hz and 440 Hz. Each voice has a low fixed gain. All voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the shared audio context.
+Each voice has a low fixed gain. All voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the shared audio context.
 
 The interface shows the centre frequency at all times. In Companion Hold it also shows the low and high frequencies.
 
 ## Companion Hold listening lesson
 
 1. Open experiment 6.
-2. Press **Start audio**.
-3. Listen for three related tones rather than three unrelated notes.
-4. Move **Companion spread** lower. The voices move closer together.
-5. Move **Companion spread** higher. The low and high voices move further from the centre.
-6. Press **Trigger now** several times. The three voices move together because they come from one sampled centre value.
-7. Switch to Sample & Hold. The companion voices become silent and only the centre remains.
-8. Return to Companion Hold. All three voices return.
-9. Press **Panic / stop** when finished.
+2. Set **Companion spread** to exactly **1.0 V**.
+3. Press **Start audio**.
+4. Hear the low voice one octave below the centre and the high voice one octave above it.
+5. Move the spread to **0.5 V**. The voices move closer together.
+6. Move the spread to **2.0 V**. They become two octaves apart from the centre.
+7. Press **Trigger now** several times. The three voices move together because they come from one sampled centre value.
+8. Switch to Sample & Hold. The companion voices become silent and only the centre remains.
+9. Return to Companion Hold. All three voices return.
+10. Press **Panic / stop** when finished.
 
 ## What just happened?
 
