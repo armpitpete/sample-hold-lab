@@ -1,43 +1,37 @@
 # Sample & Hold Lab
 
-Sample & Hold Lab is an interactive visual and audible laboratory for understanding how changing voltages become sampled, held, tracked and slewed control signals.
+Sample & Hold Lab is an interactive visual and audible laboratory for understanding how changing voltages become sampled, held, tracked, slewed, measured and converted to pitch.
 
 ## Live app
 
 https://armpitpete.github.io/sample-hold-lab/
 
-## What it teaches
+## Completed teaching tools
 
-The app makes the complete control path visible:
+- Sample & Hold, Track & Hold and Companion Hold
+- LFO, noise and manual CV inputs
+- exact 1 V/octave pitch tracking
+- selectable 0 V reference pitch: C3, A3, C4 or A4
+- live voltage, frequency and musical-note readouts
+- optional semitone quantization at 12 steps per volt
+- low, centre and high Companion Hold voices
+- independent mute and solo controls for all three voices
+- normal, quarter-speed and tenth-speed observation modes
+- pause, resume and single-step simulation
+- two oscilloscope measurement cursors
+- shared trigger, gate, input, held and slewed-output timeline
+- six guided experiments and a separate Explore mode
+- deterministic model tests and validated GitHub Pages deployment
+
+## Pitch rule
 
 ```text
-changing input -> trigger or gate -> captured target -> slew -> visible output -> 1 V/octave pitch
+frequency = selected reference frequency × 2^voltage
 ```
 
-It includes:
+A change of +1 V always doubles frequency. A change of -1 V halves it. Quantizer mode rounds the control voltage to one of twelve semitone steps per volt before pitch conversion.
 
-- Sample & Hold
-- Track & Hold
-- Companion Hold with explicit centre/high/low mathematics
-- LFO, noise and manual inputs
-- bounded timing jitter
-- a shared event timeline with trigger and gate markers
-- captured-point and held-value readouts
-- live plain-language event explanations
-- six guided experiments
-- a separate Explore mode
-- one centre voice for Sample & Hold and Track & Hold
-- three related low, centre and high voices for Companion Hold
-- exact 1 V/octave pitch tracking
-- one shared master safety path and panic shutdown
-- deterministic model tests
-- pull-request validation before deployment
-
-## Product boundary
-
-This is a focused learning laboratory, not a general synthesiser. The three Companion Hold voices exist only to make its three related control paths audible. The project still excludes patch cables, effects, MIDI, filters, amplifiers, modulation matrices, presets and save/load.
-
-## Companion Hold rule
+## Companion Hold
 
 ```text
 centre = sampled value
@@ -45,35 +39,11 @@ high   = centre + spread
 low    = centre - spread
 ```
 
-All three outputs are clamped to -5 V through +5 V. In Companion Hold, all three drive quiet pitch voices. In Sample & Hold and Track & Hold, only the centre voice is audible.
+A spread of 1 V places the companions exactly one octave above and below the centre unless an output reaches the visible ±5 V boundary. Mute and solo make each relationship independently audible.
 
-## 1 V/octave pitch rule
+## Product boundary
 
-The audio mapping follows the standard exponential relationship:
-
-```text
-frequency = 220 Hz × 2^voltage
-```
-
-The reference is:
-
-```text
-0 V = A3 = 220 Hz
-```
-
-Therefore:
-
-- -2 V = 55 Hz
-- -1 V = 110 Hz
-- 0 V = 220 Hz
-- +1 V = 440 Hz
-- +2 V = 880 Hz
-
-Every increase of exactly 1 V doubles frequency. Every decrease of exactly 1 V halves frequency. Companion spread is measured in volts, so a spread of 1 V places the high and low voices exactly one octave above and below the centre unless a companion output reaches the visible ±5 V limit.
-
-## Audio safety
-
-Each oscillator has a low fixed gain and all voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the audio context.
+This remains a focused control-voltage teaching laboratory, not a general synthesiser. It excludes patch cables, effects, MIDI, filters, amplifiers, modulation matrices, presets and save/load.
 
 ## Development
 
@@ -85,6 +55,4 @@ npm run check
 
 `npm run check` performs TypeScript checking, deterministic behavioural tests and the production build.
 
-## Manual
-
-See [`docs/MANUAL.md`](docs/MANUAL.md).
+See [`docs/MANUAL.md`](docs/MANUAL.md) for the complete learning guide.
