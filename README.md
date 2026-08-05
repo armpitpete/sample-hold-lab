@@ -26,34 +26,29 @@ It includes:
 - live plain-language event explanations
 - six guided experiments
 - a separate Explore mode
-- one quiet oscillator controlled only by the slewed main output
-- panic audio shutdown
+- one centre voice for Sample & Hold and Track & Hold
+- three related low, centre and high voices for Companion Hold
+- one shared master safety path and panic shutdown
 - deterministic model tests
 - pull-request validation before deployment
 
 ## Product boundary
 
-This is a focused learning laboratory, not a general synthesiser. It deliberately excludes patch cables, multiple oscillators, effects, MIDI, filters, amplifiers, modulation matrices, presets and save/load.
+This is a focused learning laboratory, not a general synthesiser. The three Companion Hold voices exist only to make its three related control paths audible. The project still excludes patch cables, effects, MIDI, filters, amplifiers, modulation matrices, presets and save/load.
 
 ## Companion Hold rule
 
 ```text
-main = sampled value
-high = main + spread
-low  = main - spread
+centre = sampled value
+high   = centre + spread
+low    = centre - spread
 ```
 
-All outputs are clamped to -5 V through +5 V. Only the main output controls audio.
+All three outputs are clamped to -5 V through +5 V. In Companion Hold, all three drive quiet pitch voices. In Sample & Hold and Track & Hold, only the centre voice is audible.
 
 ## Audio safety
 
-The only audio path is:
-
-```text
-slewed main CV -> oscillator pitch
-```
-
-Pitch is clamped to 110–440 Hz. The oscillator uses a quiet fixed gain. **Panic / stop** stops and disconnects the oscillator and closes its audio context.
+Pitch is clamped to 110–440 Hz for every voice. Each oscillator has a low fixed gain and all voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the audio context.
 
 ## Development
 
