@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clamp, companionValues, cvToFrequency, jitteredInterval, sampleHold, slew, trackHold } from './model';
+import { clamp, companionValues, cvToFrequency, frequencyToNoteName, jitteredInterval, quantizeCv, sampleHold, slew, trackHold } from './model';
 
 describe('control-voltage model', () => {
   it('samples only on a trigger', () => {
@@ -24,11 +24,20 @@ describe('control-voltage model', () => {
     expect(jitteredInterval(1000,.1,1)).toBe(1100);
     expect(clamp(8)).toBe(5);
   });
-  it('uses exact 1 V per octave pitch tracking from 0 V = 220 Hz', () => {
-    expect(cvToFrequency(0)).toBe(220);
-    expect(cvToFrequency(1)).toBe(440);
-    expect(cvToFrequency(2)).toBe(880);
-    expect(cvToFrequency(-1)).toBe(110);
-    expect(cvToFrequency(-2)).toBe(55);
+  it('uses exact 1 V per octave from selectable references', () => {
+    expect(cvToFrequency(0,220)).toBe(220);
+    expect(cvToFrequency(1,220)).toBe(440);
+    expect(cvToFrequency(-1,220)).toBe(110);
+    expect(cvToFrequency(1,261.625565)).toBeCloseTo(523.25113,5);
+  });
+  it('quantizes to twelve semitone steps per volt', () => {
+    expect(quantizeCv(.04,true)).toBe(0);
+    expect(quantizeCv(.08,true)).toBeCloseTo(1/12);
+    expect(quantizeCv(.08,false)).toBe(.08);
+  });
+  it('names musical pitches', () => {
+    expect(frequencyToNoteName(220)).toBe('A3');
+    expect(frequencyToNoteName(440)).toBe('A4');
+    expect(frequencyToNoteName(261.625565)).toBe('C4');
   });
 });
