@@ -1,8 +1,5 @@
 export type HoldMode = 'sample-hold' | 'track-hold' | 'companion-hold';
 
-export const REFERENCE_FREQUENCY_HZ = 220;
-export const REFERENCE_VOLTAGE = 0;
-
 export const clamp = (value:number,min=-5,max=5)=>Math.min(max,Math.max(min,value));
 
 export function slew(current:number,target:number,amount:number):number {
@@ -28,6 +25,20 @@ export function jitteredInterval(baseMs:number,jitter:number,random=0.5):number 
   return Math.max(40,baseMs*(1+offset));
 }
 
-export function cvToFrequency(cv:number):number {
-  return REFERENCE_FREQUENCY_HZ * Math.pow(2, cv - REFERENCE_VOLTAGE);
+export function quantizeCv(cv:number,enabled:boolean):number {
+  return enabled ? Math.round(cv*12)/12 : cv;
+}
+
+export function cvToFrequency(cv:number,referenceHz=220):number {
+  return referenceHz*Math.pow(2,cv);
+}
+
+export function frequencyToMidi(frequency:number):number {
+  return 69+12*Math.log2(frequency/440);
+}
+
+export function frequencyToNoteName(frequency:number):string {
+  const midi=Math.round(frequencyToMidi(frequency));
+  const names=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+  return `${names[((midi%12)+12)%12]}${Math.floor(midi/12)-1}`;
 }
