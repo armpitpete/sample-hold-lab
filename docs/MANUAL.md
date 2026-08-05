@@ -11,7 +11,7 @@ Open **Learn** and work through the six experiments in order:
 3. Turn steps into glides.
 4. Compare tracking with sampling.
 5. Make timing imperfect.
-6. Create related companion outputs.
+6. Hear three related companion voices.
 
 Each experiment loads useful starting settings automatically. Use **Explore** after the behaviour makes sense.
 
@@ -30,23 +30,31 @@ A gold vertical line marks a trigger or gate edge. In Track & Hold mode, the sha
 
 ### Sample & Hold
 
-A trigger captures the current input voltage. That value remains held until another trigger occurs.
+A trigger captures the current input voltage. That value remains held until another trigger occurs. Audio uses one quiet centre voice.
 
 ### Track & Hold
 
-The output follows the input while the gate is open. When the gate closes, the last value remains held.
+The output follows the input while the gate is open. When the gate closes, the last value remains held. Audio uses one quiet centre voice.
 
 ### Companion Hold
 
 One trigger creates three mathematically related values:
 
 ```text
-main = sampled value
-high = main + spread
-low  = main - spread
+centre = sampled value
+high   = centre + spread
+low    = centre - spread
 ```
 
-All three are clamped to the visible -5 V to +5 V range. Only the main output controls audio.
+All three are clamped to the visible -5 V to +5 V range. When audio is running, Companion Hold maps all three values to three quiet sine voices:
+
+```text
+low companion CV    -> low voice
+centre slewed CV    -> centre voice
+high companion CV   -> high voice
+```
+
+The low and high voices are slightly separated left and right when stereo panning is available. The centre remains central. This separation is only an aid to hearing the relationship.
 
 ## Controls
 
@@ -54,37 +62,38 @@ All three are clamped to the visible -5 V to +5 V range. Only the main output co
 - **Clock / gate rate:** how often automatic events occur.
 - **Slew:** how slowly output travels toward the captured target. Zero means immediate movement.
 - **Timing jitter:** moves automatic events away from perfectly regular timing, within a bounded range.
-- **Companion spread:** distance above and below the main value in Companion Hold.
+- **Companion spread:** distance above and below the centre value in Companion Hold. It changes both the visible gap and the audible pitch relationship.
 - **Trigger now:** captures immediately in Sample & Hold and Companion Hold.
 - **Reset view:** clears the timeline and starts a fresh explanation.
 
-## Audio boundary
+## Audio behaviour and safety
 
-The only audio path is:
+**Start audio** creates the three-voice audio engine, but the selected mode decides which voices are audible:
 
-```text
-slewed main CV -> safe oscillator pitch
-```
+- **Sample & Hold:** centre voice only.
+- **Track & Hold:** centre voice only.
+- **Companion Hold:** low, centre and high voices together.
 
-**Start audio** creates one quiet sine oscillator. **Panic / stop** stops, disconnects and closes the audio context. Pitch remains clamped between 110 Hz and 440 Hz.
+Every voice is clamped between 110 Hz and 440 Hz. Each voice has a low fixed gain. All voices pass through one master gain. **Panic / stop** stops and disconnects every oscillator and closes the shared audio context.
 
-The companion outputs, graph lanes and timing markers are visual only.
+The interface shows the centre frequency at all times. In Companion Hold it also shows the low and high frequencies.
+
+## Companion Hold listening lesson
+
+1. Open experiment 6.
+2. Press **Start audio**.
+3. Listen for three related tones rather than three unrelated notes.
+4. Move **Companion spread** lower. The voices move closer together.
+5. Move **Companion spread** higher. The low and high voices move further from the centre.
+6. Press **Trigger now** several times. The three voices move together because they come from one sampled centre value.
+7. Switch to Sample & Hold. The companion voices become silent and only the centre remains.
+8. Return to Companion Hold. All three voices return.
+9. Press **Panic / stop** when finished.
 
 ## What just happened?
 
-The explanation panel describes each trigger or gate edge in plain language. It reports the captured voltage, whether tracking began or ended, and whether slew is still moving the output toward its target.
-
-## Safe first exploration
-
-1. Choose **LFO** and **Sample & Hold**.
-2. Set slew to zero.
-3. Press **Trigger now** several times.
-4. Watch the input continue moving while the captured target remains flat.
-5. Raise slew to about 70%.
-6. Trigger again and watch the output glide.
-7. Start audio only when you want to hear the same main output as pitch.
-8. Press **Panic / stop** when finished.
+The explanation panel describes each trigger or gate edge in plain language. In Companion Hold it reports the low, centre and high control voltages created by the current spread.
 
 ## Project boundary
 
-This is a focused control-voltage teaching laboratory, not a general synthesiser. It deliberately does not include patch cables, effects, multiple oscillators, a modulation matrix, MIDI, filters, amplifiers, presets or save/load.
+This is a focused control-voltage teaching laboratory, not a general synthesiser. The three oscillators are a deliberate teaching mechanism for Companion Hold. The project still does not include patch cables, effects, a modulation matrix, MIDI, filters, amplifiers, presets or save/load.
