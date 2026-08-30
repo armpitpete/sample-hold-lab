@@ -6,6 +6,15 @@ Sample & Hold Lab is an interactive visual and audible laboratory for understand
 
 https://armpitpete.github.io/sample-hold-lab/
 
+## Current state
+
+The application is the completed teaching laboratory at package version `3.0.0`. The canonical project state and release gate are recorded in:
+
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)
+- [`docs/RELEASE_ACCEPTANCE.md`](docs/RELEASE_ACCEPTANCE.md)
+
+Future plugin work is a separate downstream lane; see [`docs/BEEP_PLUGIN_SPEC.md`](docs/BEEP_PLUGIN_SPEC.md).
+
 ## Completed teaching tools
 
 - Sample & Hold, Track & Hold and Companion Hold
