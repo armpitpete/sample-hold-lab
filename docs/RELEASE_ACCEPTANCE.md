@@ -12,15 +12,18 @@ d59d3a7a8d7a292cdc46e33c9eae874b378e92b2
 
 ## Automated gate
 
-| Check | Status | Evidence |
+| Check | Requirement | Evidence location |
 | --- | --- | --- |
-| dependency install | PASS on PR #62 | workflow run `30997755967`, job `Test, type-check and build` |
-| TypeScript | PASS on PR #62 | `npm run check` |
-| deterministic tests | PASS on PR #62 | `npm run check` |
-| production build | PASS on PR #62 | `npm run check` |
-| fresh reconciliation-head validation | PENDING | must pass on the reconciliation PR |
+| dependency install | PASS on final PR head | PR #63 workflow |
+| TypeScript | PASS on final PR head | `npm run check` |
+| deterministic tests | PASS on final PR head | `npm run check` |
+| production build | PASS on final PR head | `npm run check` |
 
-The reconciliation branch changes documentation only. The fresh PR run is still required because the release gate is exact-head, not inherited from an older build.
+PR #63 demonstrated the gate successfully after pinning the validation environment to Node `24.20.0` / npm `11.19.0`: dependency installation passed, all eight deterministic tests passed, TypeScript passed and the Vite production build passed.
+
+The release rule remains exact-head: after any later PR commit, the new final head must independently pass the workflow. Evidence for the final run should be recorded in the PR conversation rather than changing this file again solely to insert a run number.
+
+The reconciliation changes project-state/release documentation plus CI runtime maintenance only. They do not change application behaviour, DSP, audio routing or application dependencies.
 
 ## Public-build smoke gate
 
