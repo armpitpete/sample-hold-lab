@@ -61,15 +61,15 @@ The historical open issues no longer described the current product. On 30 August
 - #7 closed as completed, with Companion Hold as the current terminology/implementation
 - #30, #42, #52, #57 and #58 closed as superseded/not planned
 
-The issue tracker should now contain only genuinely current work.
+The current open work is now limited to the real release/human acceptance and repository-protection gates.
 
-## Validation evidence already present
+## Validation and CI state
 
-PR #62 merged as commit `d59d3a7a8d7a292cdc46e33c9eae874b378e92b2`.
+PR #62 merged as commit `d59d3a7a8d7a292cdc46e33c9eae874b378e92b2` and had successful TypeScript, deterministic-test and production-build validation.
 
-Its pull-request validation run `30997755967` completed successfully. The job `Test, type-check and build` passed both dependency installation and `npm run check`.
+During PR #63 reconciliation, the hosted runner exposed an `npm install` failure under Node 22 / npm 10.9.8 before project checks could start. The workflow was therefore pinned to Node `24.20.0` and records the Node/npm versions used. Under Node 24.20.0 / npm 11.19.0, dependency installation and `npm run check` passed, including all eight deterministic tests and the production build.
 
-A fresh validation run on the reconciliation PR is still required before treating the present state as the release candidate.
+Because exact-head evidence is required, the final PR head must still be green before merge. No later documentation edit may inherit an earlier head's PASS without rerunning the gate.
 
 ## Release candidate rule
 
