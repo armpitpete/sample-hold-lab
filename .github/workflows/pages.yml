@@ -18,7 +18,7 @@ concurrency:
 jobs:
   validate:
     name: Test, type-check and build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,7 +37,7 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux]
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
